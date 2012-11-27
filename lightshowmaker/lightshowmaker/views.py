@@ -23,7 +23,7 @@ def index(request, show_id=None):
     if show_id:
         show = context['current_show'] = Show.objects.get(id=show_id)
         context['lights'] = Lightbulb.objects.filter(strand__show = show)
-        context['next_number'] = (context['lights'].aggregate(Max('number')).values()[0] or 0) + 1
+        context['next_number'] = (context['lights'].aggregate(Max('number')).values()[0] or 0)
     return render(request, 'index.html', context)
 
 @csrf_exempt
@@ -84,6 +84,7 @@ def real_time(request, show_id):
                 sock.sendto(led, ('[00:13:A2:00:40:5E:0F:39]!'.lower(), 0x15, 0x1ed5, 0x11ed))
                 time.sleep(0.01)
         sock.close()
+        return HttpResponse()
 
     else:
         return HttpResponseNotAllowed(['POST'])
