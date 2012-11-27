@@ -32,7 +32,7 @@ $('#show-numbers').on('click', function(e){
 $('div#body').on('click', function(e){
     e.preventDefault()
     if (!$('div#body').hasClass('add-lights')) return
-    var nextNumber = $('div#body').data('nextNumber')
+    var nextNumber = $('div#body').data('nextNumber');
     $('div#body').data('nextNumber', nextNumber += 1);
     $('div#body').append($('<div class="light"><span>' + nextNumber +'</span></div>').css({'top': e.pageY - $('div#body').position().top, 'left': e.pageX}))
 })
@@ -97,4 +97,15 @@ $('#save').on('click', function(e){
             $this.button('reset');
         }
     });
+});
+
+$('#real-time').on('click', function(e){
+   var $this = $(this).button('loading');
+   $.ajax({
+       url: '/show/' + $('div#body').data('showId') + '/real_time/',
+       type: 'POST',
+       success: function(data, status, xhr){
+           $this.button('reset');
+       }
+   })
 });
