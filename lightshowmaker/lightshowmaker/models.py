@@ -4,15 +4,19 @@ class Show(models.Model):
     name = models.CharField(max_length=30)
     background = models.FileField(upload_to='images')
     
+class Strand(models.Model):
+    show = models.ForeignKey('Show', related_name='strands')
+    name = models.CharField(max_length=30)
+    eui64 = models.CharField(max_length=30)    
+
 class Lightbulb(models.Model):
-    show = models.ForeignKey('Show')
-    strand = models.IntegerField(default=1)
+    strand = models.ForeignKey('Strand', related_name='lightbulbs')
     number = models.IntegerField()
     x = models.FloatField()
     y = models.FloatField()
     
 class BulbColor(models.Model):
-    bulb = models.ForeignKey('Lightbulb')
+    lightbulb = models.ForeignKey('Lightbulb', related_name='colors')
     frame = models.IntegerField()
     red = models.IntegerField()
     green = models.IntegerField()
