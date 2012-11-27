@@ -70,14 +70,14 @@ def real_time(request, show_id):
         sock = socket.socket(socket.AF_XBEE, socket.SOCK_DGRAM, socket.XBS_PROT_TRANSPORT)
         sock.bind(('', 0x15, 0, 0))
         show = get_object_or_404(Show, id=show_id)
-        for strand in show.strands:
+        for strand in show.strands.all():
             leds = []
-            for lightbulb in strand.lightbulbs.order('number'):
-                color = lightbulb.colors[0]
+            for lightbulb in strand.lightbulbs.order_by('number'):
+                color = lightbulb.colors.all()[0]
                 # color order - blue, green, red, extra data
                 extra = 0
                 leds.append(struct.pack('<BBBB', lightbulb.number, 
-                                        color.brightness, 
+                                        color.brightness & 0xFF, 
                                         ((color.blue & 0xF) << 4) + (color.green & 0xF), 
                                         ((color.red & 0xF) << 4) + (extra & 0xF)))
             for led in leds:
