@@ -1,6 +1,6 @@
 div#body{
     width: 100%;
-    background: url('/static/img/debut_dark.png') repeat #CCC;
+    background: url('/static/img/debut_dark.png') repeat scroll 0 0 #CCC;
     position: relative;
     
 }
