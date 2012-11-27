@@ -19,6 +19,10 @@ div.light{
     div.light span{
         display: none;
     }
+    
+body.add-lights{
+    cursor: pointer;
+}
 
 body.delete-lights div.light, body.change-colors div.light{
     cursor: pointer;
@@ -42,7 +46,11 @@ body.show-numbers div.light span{
     visibility: hidden;
 }
 
-body.change-colors #slider{
+#play{
+    visibility: hidden;
+}
+
+body.change-colors #slider, body.change-colors #play{
     visibility: visible;
 }
 .ui-slider-handle{

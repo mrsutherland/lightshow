@@ -45,6 +45,7 @@
                             <button id='change-colors' type='button' class='btn'>Colors</button>
                         </li>
                         <li><div id='slider'></div></li>
+                        <li><button id='play' type='button' class='btn' data-playing-text='&lt;i class="icon-pause" &gt;&lt;/i&gt;'><i class='icon-play'></i></button></li>
                         <li><button id='show-numbers' type='button' class='btn' data-toggle='button'>Show Numbers</button></li>
                         <li><button id='save' type='button' class='btn btn-primary' data-loading-text='Saving...' autocomplete='off'>Save</button></li>
                         <li><button id='real-time' type='button' class='btn btn-primary' data-loading-text='Making it spin...' autocomplete='off'>Make it Spin</button></li>
@@ -54,10 +55,10 @@
         </div>
         
         {% if current_show %}
-            <div id='body' data-next-number='{{next_number}}' data-show-id='{{current_show.id}}'>
+            <div id='body' data-next-number='{{next_number}}' data-show-id='{{current_show.id}}' data-step-count='{{lights.0.colors.count|default:4}}'>
                 {% for light in lights %}
-                    <div class='light' data-red='{{light.colors.all.0.red}}' data-green='{{light.colors.all.0.green}}' data-blue='{{light.colors.all.0.blue}}'
-                         style='top: {{light.y}}px; left: {{light.x}}px; background-color: {{light.rgb}}'><span>{{light.number}}</span></div>
+                    <div class='light' data-colors='{{light.color_data}}'
+                         style='top: {{light.y}}px; left: {{light.x}}px; background-color: {{light.colors.all.0.rgb}}'><span>{{light.number}}</span></div>
                 {% endfor %}
             </div>
         {% else %}
