@@ -21,10 +21,29 @@ div.light{
         display: none;
     }
 
-div#body.add-lights div.light{
+body.add-lights div.light{
     cursor: default;
+}
+
+body.move-lights div.light{
+    cursor: move;
 }
 
 div#body.show-numbers div.light span{
     display: inline;
 }
+
+.nav li{
+    margin-right: 10px;
+}
+
+#slider{
+    margin-top: 13px;
+    width: 200px;
+    visibility: hidden;
+}
+
+body.change-colors #slider{
+    visibility: visible;
+}
+    
