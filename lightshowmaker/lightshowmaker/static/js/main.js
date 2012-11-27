@@ -56,6 +56,13 @@ $(function(){
         });
     });
     
+    $('a#step-count').on('click', function(e){
+        e.preventDefault();
+        var stepCount = window.prompt('New step count (extra steps will be deleted!):');
+        if (stepCount == null) return;
+        parseInt(stepCount);
+    });
+    
     $('a#rename-show').on('click', function(e){
         e.preventDefault();
         var showName = window.prompt('Rename your show:');
@@ -98,7 +105,7 @@ $(function(){
         e.preventDefault()
         if (!$('body').hasClass('add-lights')) return;
         var nextNumber = $('div#body').data('nextNumber');
-        $('div#body').data('nextNumber', nextNumber += 1);
+        $('div#body').data('nextNumber', nextNumber + 1);
         $('div#body').append($('<div class="light"><span>' + nextNumber +'</span></div>')
                 .css({'top': e.pageY - $('div#body').position().top, 'left': e.pageX})
                 .data({'red': 15, 'green': 15, 'blue': 15}))

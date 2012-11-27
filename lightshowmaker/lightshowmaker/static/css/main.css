@@ -45,4 +45,7 @@ body.show-numbers div.light span{
 body.change-colors #slider{
     visibility: visible;
 }
+.ui-slider-handle{
+    cursor: pointer!important;
+}
     

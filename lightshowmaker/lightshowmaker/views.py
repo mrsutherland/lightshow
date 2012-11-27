@@ -23,7 +23,7 @@ def index(request, show_id=None):
     if show_id:
         show = context['current_show'] = Show.objects.get(id=show_id)
         context['lights'] = Lightbulb.objects.filter(strand__show = show)
-        context['next_number'] = (context['lights'].aggregate(Max('number')).values()[0] or 0)
+        context['next_number'] = (context['lights'].aggregate(Max('number')).values()[0] or -1) + 1
     return render(request, 'index.html', context)
 
 @csrf_exempt
