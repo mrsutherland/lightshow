@@ -85,9 +85,7 @@ def real_time(request, show_id):
                                         color.brightness & 0xFF, 
                                         ((color.blue & 0xF) << 4) + (color.green & 0xF), 
                                         ((color.red & 0xF) << 4) + (extra & 0xF)))
-            for led in leds:
-                sock.sendto(led, ('[00:13:A2:00:40:5E:0F:39]!'.lower(), 0x15, 0x1ed5, 0x11ed))
-                time.sleep(0.25)
+            sock.sendto(''.join(leds), ('[00:13:A2:00:40:5E:0F:39]!'.lower(), 0x15, 0x1ed5, 0x11ed))
         sock.close()
         return HttpResponse()
 
