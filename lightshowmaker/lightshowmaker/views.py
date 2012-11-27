@@ -68,6 +68,7 @@ def real_time(request, show_id):
     import socket
     if request.method == 'POST':
         sock = socket.socket(socket.AF_XBEE, socket.SOCK_DGRAM, socket.XBS_PROT_TRANSPORT)
+        sock.bind(('', 0x15, 0, 0))
         show = get_object_or_404(Show, id=show_id)
         for strand in show.strands:
             leds = []
