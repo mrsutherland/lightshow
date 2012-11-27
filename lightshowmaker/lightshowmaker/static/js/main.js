@@ -42,9 +42,9 @@ $('div#body').on('click', '.light', function(e){
     $(e.target).spectrum({
         color: $(e.target).css('background-color'), 
         showInput: true,
-        showAlpha: true,
+        //showAlpha: true,
         showPalette: true,
-        showSelectionPalette: true,
+        //showSelectionPalette: true,
         localStorageKey: 'lightshowmaker.colors',
         clickoutFiresChange: true,
         showInitial: true,
@@ -57,16 +57,16 @@ $('div#body').on('click', '.light', function(e){
 })
 
 $('div#body').on('mousedown', '.light', function(down_event){
-    down_event.preventDefault();
+    //down_event.preventDefault();
     if ($('div#body').hasClass('add-lights')) return;
     
     var light = $(down_event.target);
     $('div#body').on('mousemove.lightshowmaker.move-light', function(move_event){
-        move_event.preventDefault();
+    //    move_event.preventDefault();
         light.css({'top': move_event.pageY - $('div#body').position().top, 'left': move_event.pageX})
     })
     $('div#body').on('mouseup', function(up_event){
-        up_event.preventDefault();
+    //    up_event.preventDefault();
         $('div#body').off('mousemove.lightshowmaker.move-light')
     })
 });
@@ -74,21 +74,27 @@ $('div#body').on('mousedown', '.light', function(down_event){
 $('#save').on('click', function(e){
     var $this = $(this).button('loading');
     e.preventDefault()
-    var lights = $('.lights').map(function(i, light){
-        return {
-            'number': parseInt(light.text());
+    var lights = [];
+    for (var i=0; i < $('.light').length; i++){
+        var light = $($('.light')[i]);
+        var color = light.css('background-color').match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+        lights.push({
+            'number': parseInt(light.text()),
             'y': parseInt(light.css('top')),
             'x': parseInt(light.css('left')),
-            'color': light.css('background-color')
-        }
-    });
+            'red': parseInt(color[1]),
+            'green': parseInt(color[2]),
+            'blue': parseInt(color[3])
+        });
+    };
+    console.log(lights)
     
     $.ajax({
         url: '/show/' + $('div#body').data('showId') + '/lights/',
         type: 'POST',
         data: {'data': JSON.stringify({'lights': lights})},
         success: function(data, status, xhr){
-            $this.button();
+            $this.button('reset');
         }
     });
 });

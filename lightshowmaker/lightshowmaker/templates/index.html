@@ -44,7 +44,10 @@
         </div>
         
         {% if current_show %}
-            <div id='body' data-next-number='0' data-show-id='{{current_show.id}}'>
+            <div id='body' data-next-number='{{next_number}}' data-show-id='{{current_show.id}}'>
+                {% for light in lights %}
+                    <div class='light' style='top: {{light.y}}px; left: {{light.x}}px; background-color: {{light.rgb}}'><span>{{light.number}}</span></div>
+                {% endfor %}
             </div>
         {% else %}
             Select a show!

@@ -15,6 +15,9 @@ class Lightbulb(models.Model):
     x = models.FloatField()
     y = models.FloatField()
     
+    def rgb(self):
+        return self.colors.all()[0].rgb()
+    
 class BulbColor(models.Model):
     lightbulb = models.ForeignKey('Lightbulb', related_name='colors')
     frame = models.IntegerField()
@@ -22,3 +25,6 @@ class BulbColor(models.Model):
     green = models.IntegerField()
     blue = models.IntegerField()
     brightness = models.IntegerField()
+    
+    def rgb(self):
+        return 'rgb(%s, %s, %s)' % (self.red * 16, self.green * 16, self.blue * 16)

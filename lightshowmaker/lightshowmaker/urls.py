@@ -7,6 +7,7 @@ from django.conf.urls import patterns, include, url
 urlpatterns = patterns('',
     url(r'^$', 'lightshowmaker.views.index', name='index'),
     url(r'^show/(?:([\d])+/)?$', 'lightshowmaker.views.show', name='show'),
+    url(r'^show/(\d+)/lights/$', 'lightshowmaker.views.lights', name='lights'),
     url(r'^show/(\d+)/real_time/$', 'lightshowmaker.views.real_time', name='real_time')
     
     # Uncomment the admin/doc line below to enable admin documentation:

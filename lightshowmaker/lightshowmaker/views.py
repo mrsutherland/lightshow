@@ -1,4 +1,5 @@
 from django.core.urlresolvers import reverse
+from django.db.models.aggregates import Max
 from django.http import HttpResponseNotAllowed, HttpResponse
 from django.shortcuts import render, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
@@ -18,7 +19,12 @@ def return_json(func):
     return _return_json
 
 def index(request, show_id=None):
-    return render(request, 'index.html', {'shows': Show.objects.all(), 'current_show': Show.objects.get(id=show_id) if show_id else None})
+    context = {'shows': Show.objects.all()}
+    if show_id:
+        show = context['current_show'] = Show.objects.get(id=show_id)
+        context['lights'] = Lightbulb.objects.filter(strand__show = show)
+        context['next_number'] = context['lights'].aggregate(Max('number')).values()[0] + 1
+    return render(request, 'index.html', context)
 
 @csrf_exempt
 @return_json
@@ -37,7 +43,6 @@ def show(request, show_id=None):
     return index(request, show_id)
 
 @csrf_exempt
-@return_json
 def lights(request, show_id):
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
@@ -49,14 +54,13 @@ def lights(request, show_id):
     
     Lightbulb.objects.filter(strand__show = show).all().delete()
     for light in lights:
-        color = light['color'].lstrip('#')
-        assert len(color) == 6
-        red = int(color[0], 16)
-        green = int(color[2], 16)
-        blue = int(color[4], 16)
+        red = round(light['red'] / 16.0)
+        green = round(light['green'] / 16.0)
+        blue = round(light['blue'] / 16.0)
         
-        bulb = Lightbulb.objects.create(strand=show.strands[0], number = light['number'], x=light['x'], y=light['y'])
-        color = BulbColor.objects.create(lightbulb=bulb, red=red, green=green, blue=blue, frame=1, brightness=511)
+        bulb = Lightbulb.objects.create(strand=show.strands.all()[0], number = light['number'], x=light['x'], y=light['y'])
+        BulbColor.objects.create(lightbulb=bulb, red=red, green=green, blue=blue, frame=1, brightness=511)
+    return HttpResponse()
 
 @csrf_exempt
 def real_time(request, show_id):
