@@ -1,7 +1,41 @@
+function change(color){
+    $(this).data('red', Math.round(color.toRgb().r / 17))
+    $(this).data('green', Math.round(color.toRgb().g / 17))
+    $(this).data('blue', Math.round(color.toRgb().b / 17))
+    $(this).css('background-color', color.toRgbString());
+}
+
+var spectrumData = {
+    showInput: true,
+    //showAlpha: true,
+    showPalette: true,
+    localStorageKey: 'lightshowmaker.colors',
+    clickoutFiresChange: true,
+    //showInitial: true,
+    preferredFormat: 'hex',
+    showButtons: false,
+    beforeShow: function(){
+        return $('body').hasClass('change-colors');
+    },
+    show: function(){
+        $(this).spectrum('set', $(this).css('background-color'));
+    },
+    move: function(color){
+        var red = Math.round(color.toRgb().r / 17)
+        var green = Math.round(color.toRgb().g / 17)
+        var blue =  Math.round(color.toRgb().b / 17)
+        $(this).spectrum('set', 'rgb(' + red * 17 + ',' + green * 17 + ',' + blue * 17 + ')');
+        change(color);
+    },
+    change: change,
+}
+
 $(function(){
     if ($('div#body').length) $('div#body').css('height', $(window).height() - $('div#body').position().top);
     
     $('div#slider').slider();
+
+    $('.light').spectrum(spectrumData).off('click.spectrum')
 
     $(window).on('resize', function(){
         $('div#body').css('height', $(window).height() - $('div#body').position().top);
@@ -67,57 +101,33 @@ $(function(){
         $('div#body').data('nextNumber', nextNumber += 1);
         $('div#body').append($('<div class="light"><span>' + nextNumber +'</span></div>')
                 .css({'top': e.pageY - $('div#body').position().top, 'left': e.pageX})
-                .data({'red': 15, 'green': 15, 'blue': 15}));
+                .data({'red': 15, 'green': 15, 'blue': 15}))
+                .spectrum(spectrumData).off('click.spectrum');
     })
     
     $('div#body').on('click', '.light', function(e){
         var $this = $(e.target).is('.light') ? $(e.target) : $(e.target).parents('.light');
         if ($('body').hasClass('delete-lights')){
+            e.preventDefault();
             $this.remove();
         }
-        
-        else if ($('body').hasClass('change-colors')) {
-            
-            function change(color){
-                $this.data('red', Math.round(color.toRgb().r / 17))
-                $this.data('green', Math.round(color.toRgb().g / 17))
-                $this.data('blue', Math.round(color.toRgb().b / 17))
-                $this.css('background-color', color.toRgbString());
-            }
-            
-            $this.spectrum({
-                color: $this.css('background-color'), 
-                showInput: true,
-                //showAlpha: true,
-                showPalette: true,
-                localStorageKey: 'lightshowmaker.colors',
-                clickoutFiresChange: true,
-                //showInitial: true,
-                preferredFormat: 'hex',
-                showButtons: false,
-                move: function(color){
-                    var red = Math.round(color.toRgb().r / 17)
-                    var green = Math.round(color.toRgb().g / 17)
-                    var blue =  Math.round(color.toRgb().b / 17)
-                    $this.spectrum('set', 'rgb(' + red * 17 + ',' + green * 17 + ',' + blue * 17 + ')');
-                    change(color);
-                },
-                change: change,
-            });
-        }
+        else if ($('body').hasClass('change-colors')){
+            $this.spectrum('toggle');
+            e.stopPropagation(); // I don't know why but this is absolutely reqd
+        }   
     })
     
     $('div#body').on('mousedown', '.light', function(down_event){
-        //down_event.preventDefault();
         if (!$('body').hasClass('move-lights')) return;
+        down_event.preventDefault();
         
         var light = $(down_event.target);
         $('div#body').on('mousemove.lightshowmaker.move-light', function(move_event){
-        //    move_event.preventDefault();
+            move_event.preventDefault();
             light.css({'top': move_event.pageY - $('div#body').position().top, 'left': move_event.pageX})
         })
         $('div#body').on('mouseup', function(up_event){
-        //    up_event.preventDefault();
+            up_event.preventDefault();
             $('div#body').off('mousemove.lightshowmaker.move-light')
         })
     });

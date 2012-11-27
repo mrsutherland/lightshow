@@ -55,7 +55,6 @@
         {% if current_show %}
             <div id='body' data-next-number='{{next_number}}' data-show-id='{{current_show.id}}'>
                 {% for light in lights %}
-                    {{light.colors}}
                     <div class='light' data-red='{{light.colors.all.0.red}}' data-green='{{light.colors.all.0.green}}' data-blue='{{light.colors.all.0.blue}}'
                          style='top: {{light.y}}px; left: {{light.x}}px; background-color: {{light.rgb}}'><span>{{light.number}}</span></div>
                 {% endfor %}
