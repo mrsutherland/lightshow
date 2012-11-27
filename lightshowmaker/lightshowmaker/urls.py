@@ -5,10 +5,8 @@ from django.conf.urls import patterns, include, url
 # admin.autodiscover()
 
 urlpatterns = patterns('',
-    # Examples:
-    # url(r'^$', 'lightshowmaker.views.home', name='home'),
-    # url(r'^lightshowmaker/', include('lightshowmaker.foo.urls')),
-
+    url(r'^$', 'lightshowmaker.views.index', name='index'),
+    
     # Uncomment the admin/doc line below to enable admin documentation:
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),
 
