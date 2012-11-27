@@ -111,7 +111,8 @@ $('div#body').on('mousedown', '.light', function(down_event){
     })
 });
 
-$('#save').on('click', function(e){
+
+function save(e, success){
     var $this = $(this).button('loading');
     e.preventDefault()
     var lights = [];
@@ -134,17 +135,22 @@ $('#save').on('click', function(e){
         data: {'data': JSON.stringify({'lights': lights})},
         success: function(data, status, xhr){
             $this.button('reset');
+            if (success) success(e)
         }
     });
-});
+}
+
+$('#save').on('click', save);
 
 $('#real-time').on('click', function(e){
-   var $this = $(this).button('loading');
-   $.ajax({
-       url: '/show/' + $('div#body').data('showId') + '/real_time/',
-       type: 'POST',
-       success: function(data, status, xhr){
-           $this.button('reset');
-       }
-   })
+    save(e, function(e){
+       var $this = $(this).button('loading');
+       $.ajax({
+           url: '/show/' + $('div#body').data('showId') + '/real_time/',
+           type: 'POST',
+           success: function(data, status, xhr){
+               $this.button('reset');
+           }
+       })
+   });
 });
