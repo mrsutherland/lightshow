@@ -35,7 +35,7 @@ def show(request, show_id=None):
     
     return index(request, show_id)
 
-@csrf_except
+@csrf_exempt
 def real_time(request, show_id):
     import zigbee
     import socket
