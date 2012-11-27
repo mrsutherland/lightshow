@@ -54,12 +54,12 @@ def lights(request, show_id):
     
     Lightbulb.objects.filter(strand__show = show).all().delete()
     for light in lights:
-        red = round(light['red'] / 16.0)
-        green = round(light['green'] / 16.0)
-        blue = round(light['blue'] / 16.0)
+        red = light['red'] // 16
+        green = light['green'] // 16
+        blue = light['blue'] // 16
         
         bulb = Lightbulb.objects.create(strand=show.strands.all()[0], number = light['number'], x=light['x'], y=light['y'])
-        BulbColor.objects.create(lightbulb=bulb, red=red, green=green, blue=blue, frame=1, brightness=511)
+        BulbColor.objects.create(lightbulb=bulb, red=red, green=green, blue=blue, frame=1, brightness=255)
     return HttpResponse()
 
 @csrf_exempt
