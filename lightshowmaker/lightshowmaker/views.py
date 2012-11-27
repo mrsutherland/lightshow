@@ -43,6 +43,15 @@ def show(request, show_id=None):
     return index(request, show_id)
 
 @csrf_exempt
+@return_json
+def delete_show(request, show_id):
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    show = get_object_or_404(Show, id=show_id)
+    show.delete()
+    return {'redirect': reverse('index')}
+
+@csrf_exempt
 def lights(request, show_id):
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
@@ -53,13 +62,9 @@ def lights(request, show_id):
     lights = data['lights']
     
     Lightbulb.objects.filter(strand__show = show).all().delete()
-    for light in lights:
-        red = light['red'] // 16
-        green = light['green'] // 16
-        blue = light['blue'] // 16
-        
+    for light in lights:        
         bulb = Lightbulb.objects.create(strand=show.strands.all()[0], number = light['number'], x=light['x'], y=light['y'])
-        BulbColor.objects.create(lightbulb=bulb, red=red, green=green, blue=blue, frame=1, brightness=255)
+        BulbColor.objects.create(lightbulb=bulb, red=light['red'], green=light['green'], blue=light['blue'], frame=1, brightness=255)
     return HttpResponse()
 
 @csrf_exempt

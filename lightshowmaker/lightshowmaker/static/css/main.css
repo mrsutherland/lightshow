@@ -1,7 +1,8 @@
 div#body{
     width: 100%;
-    background-color: black;
+    background: url('/static/img/debut_dark.png') repeat #CCC;
     position: relative;
+    
 }
 
 div.light{

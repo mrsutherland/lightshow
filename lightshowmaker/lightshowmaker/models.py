@@ -27,4 +27,4 @@ class BulbColor(models.Model):
     brightness = models.IntegerField()
     
     def rgb(self):
-        return 'rgb(%s, %s, %s)' % (self.red * 16, self.green * 16, self.blue * 16)
+        return 'rgb(%s, %s, %s)' % (self.red * 17, self.green * 17, self.blue * 17)

@@ -7,13 +7,41 @@ $(window).on('resize', function(){
 
 $('a#add-show').on('click', function(e){
     e.preventDefault();
-    var showName = window.prompt('Name your new show:');
+    var showName = window.prompt('Name your new show (have you saved the current show?!):');
     if (showName == null) return;
     $.ajax({
         url: '/show/',
         type: 'POST',
         data: {'name': showName},
         dataType: 'json',
+        success: function(data, status, xhr){
+            window.location=data.redirect;
+        }
+    });
+});
+
+$('a#rename-show').on('click', function(e){
+    e.preventDefault();
+    var showName = window.prompt('Rename your show:');
+    if (showName == null) return;
+    $.ajax({
+        url: '/show/' + $('div#body').data('showId') + '/',
+        type: 'POST',
+        data: {'name': showName},
+        dataType: 'json',
+        success: function(data, status, xhr){
+            $('.current-show-name').html(showName);
+        }
+    });
+});
+
+$('a#delete-show').on('click', function(e){
+    e.preventDefault();
+    var showName = window.confirm('Are you very sure you want to delete this whole show?  There is no going back.');
+    if (showName != true) return;
+    $.ajax({
+        url: '/show/' + $('div#body').data('showId') + '/delete/',
+        type: 'POST',
         success: function(data, status, xhr){
             window.location=data.redirect;
         }
@@ -34,24 +62,36 @@ $('div#body').on('click', function(e){
     if (!$('div#body').hasClass('add-lights')) return
     var nextNumber = $('div#body').data('nextNumber');
     $('div#body').data('nextNumber', nextNumber += 1);
-    $('div#body').append($('<div class="light"><span>' + nextNumber +'</span></div>').css({'top': e.pageY - $('div#body').position().top, 'left': e.pageX}))
+    $('div#body').append($('<div class="light"><span>' + nextNumber +'</span></div>')
+            .css({'top': e.pageY - $('div#body').position().top, 'left': e.pageX})
+            .data({'red': 15, 'green': 15, 'blue': 15}));
 })
 
 $('div#body').on('click', '.light', function(e){
     if ($('div#body').hasClass('add-lights')) return;
-    $(e.target).spectrum({
-        color: $(e.target).css('background-color'), 
+    var $this = $(e.target).is('.light') ? $(e.target) : $(e.target).parents('.light');
+    
+    $this.spectrum({
+        color: $this.css('background-color'), 
         showInput: true,
         //showAlpha: true,
         showPalette: true,
-        //showSelectionPalette: true,
         localStorageKey: 'lightshowmaker.colors',
         clickoutFiresChange: true,
         showInitial: true,
         preferredFormat: 'hex',
+        move: function(color){
+            var red = Math.round(color.toRgb().r / 17)
+            var green = Math.round(color.toRgb().g / 17)
+            var blue =  Math.round(color.toRgb().b / 17)
+            $this.spectrum('set', 'rgb(' + red * 17 + ',' + green * 17 + ',' + blue * 17 + ')');
+        },
+        
         change: function(color){
-            $(e.target).css('background-color', color.toHexString());
-            console.log(color)
+            $this.data('red', Math.round(color.toRgb().r / 17))
+            $this.data('green', Math.round(color.toRgb().g / 17))
+            $this.data('blue', Math.round(color.toRgb().b / 17))
+            $this.css('background-color', color.toRgbString());
         }
     });
 })
@@ -77,17 +117,16 @@ $('#save').on('click', function(e){
     var lights = [];
     for (var i=0; i < $('.light').length; i++){
         var light = $($('.light')[i]);
-        var color = light.css('background-color').match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+        console.log(light.data());
         lights.push({
             'number': parseInt(light.text()),
             'y': parseInt(light.css('top')),
             'x': parseInt(light.css('left')),
-            'red': parseInt(color[1]),
-            'green': parseInt(color[2]),
-            'blue': parseInt(color[3])
+            'red': light.data('red'),
+            'green': light.data('green'),
+            'blue': light.data('blue')
         });
     };
-    console.log(lights)
     
     $.ajax({
         url: '/show/' + $('div#body').data('showId') + '/lights/',

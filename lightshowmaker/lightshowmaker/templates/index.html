@@ -1,44 +1,49 @@
 <!DOCTYPE html>
 <html lang='en'>
     <head>
-        <meta charset="utf-8">
+        <meta charset='utf-8'>
         <link href='{{STATIC_URL}}css/bootstrap.css' rel='stylesheet'>
         <link href='{{STATIC_URL}}css/spectrum.css' rel='stylesheet'>
         <link href='{{STATIC_URL}}css/main.css' rel='stylesheet'>
     </head>
     
     <body>
-        <div class="navbar navbar-static-top">
-            <div class="navbar-inner">
-              <a class="brand" href="/">LightshowMaker</a>
-                <ul class="nav">
+        <div class='navbar navbar-static-top'>
+            <div class='navbar-inner'>
+              <a class='brand' href='/'>LightshowMaker</a>
+                <ul class='nav'>
                     <li>
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                        <a href='#' class='dropdown-toggle current-show-name' data-toggle='dropdown'>
                             {{current_show.name|default:'Shows'}}
-                            <b class="caret"></b>
+                            <b class='caret'></b>
                         </a>
-                        <ul class="dropdown-menu">
+                        <ul class='dropdown-menu'>
+                            {% if current_show %}
+                                <li><a href='#' id='rename-show'>Rename</a></li>
+                                <li><a href='#' id='delete-show'>Delete</a></li>
+                                <li class='divider'></li>
+                            {% endif %}
                             <li><a href='#' id='add-show'>Add Show</a></li>
                             <li class='divider'></li>
                             {% for show in shows %}
                                 <li><a href='{% url show show.id %}'>
                                     <i class='icon-ok' {% if show != current_show %} style='visibility:hidden;' {% endif %}></i>
-                                    {{show.name}}
+                                    <span {% if show == current_show %}class='current-show-name'{% endif %}>{{show.name}}</span>
                                 </a></li>
                             {% endfor %}
                         </ul>
                     </li>
-                    <!--div class="btn-group" data-toggle="buttons-radio">
-                        <button type="button" class="btn">Add Lights</button>
-                        <button type="button" class="btn">Move Lights</button>
-                        <button type="button" class="btn">Change Colors</button>
+                    <!--div class='btn-group' data-toggle='buttons-radio'>
+                        <button type='button' class='btn'>Add Lights</button>
+                        <button type='button' class='btn'>Move Lights</button>
+                        <button type='button' class='btn'>Change Colors</button>
                     </div-->
                     
                     {% if current_show %}
-                        <li><button id='add-lights' type="button" class="btn btn-primary" data-toggle="button">Add Lights</button></li>
-                        <li><button id='show-numbers' type="button" class="btn" data-toggle="button">Show Numbers</button></li>
-                        <li><button id='save' type="button" class="btn btn-primary" data-loading-text='Saving...' autocomplete='off'>Save</button></li>
-                        <li><button id='real-time' type="button" class="btn btn-primary" data-loading-text='Making it spin...' autocomplete='off'>Make it Spin</button></li>
+                        <li><button id='add-lights' type='button' class='btn btn-primary' data-toggle='button'>Add Lights</button></li>
+                        <li><button id='show-numbers' type='button' class='btn' data-toggle='button'>Show Numbers</button></li>
+                        <li><button id='save' type='button' class='btn btn-primary' data-loading-text='Saving...' autocomplete='off'>Save</button></li>
+                        <li><button id='real-time' type='button' class='btn btn-primary' data-loading-text='Making it spin...' autocomplete='off'>Make it Spin</button></li>
                     {% endif %}
                 </ul>
             </div>
@@ -47,11 +52,20 @@
         {% if current_show %}
             <div id='body' data-next-number='{{next_number}}' data-show-id='{{current_show.id}}'>
                 {% for light in lights %}
-                    <div class='light' style='top: {{light.y}}px; left: {{light.x}}px; background-color: {{light.rgb}}'><span>{{light.number}}</span></div>
+                    {{light.colors}}
+                    <div class='light' data-red='{{light.colors.all.0.red}}' data-green='{{light.colors.all.0.green}}' data-blue='{{light.colors.all.0.blue}}'
+                         style='top: {{light.y}}px; left: {{light.x}}px; background-color: {{light.rgb}}'><span>{{light.number}}</span></div>
                 {% endfor %}
             </div>
         {% else %}
-            Select a show!
+            <div class='span12' style='margin-top: 20px'>
+                <h2>Select a Show</h2>
+                <ul>
+                    {% for show in shows %}
+                        <li><a href='{% url show show.id %}'>{{ show.name }}</a></li>
+                    {% endfor %}
+                </ul>
+            </div>
         {% endif %}
         
         <script src='{{STATIC_URL}}js/jquery-1.8.3.js'></script>
