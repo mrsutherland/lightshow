@@ -6,6 +6,7 @@ from django.conf.urls import patterns, include, url
 
 urlpatterns = patterns('',
     url(r'^$', 'lightshowmaker.views.index', name='index'),
+    url(r'^show/(?:([\d])+/)?$', 'lightshowmaker.views.show', name='show'),
     
     # Uncomment the admin/doc line below to enable admin documentation:
     # url(r'^admin/doc/', include('django.contrib.admindocs.urls')),

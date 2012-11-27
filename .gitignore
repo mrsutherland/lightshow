@@ -5,3 +5,4 @@ lightshowmaker/env
 .pydevproject
 .settings
 lightshowmaker/logs/*
+*.db
