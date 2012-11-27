@@ -13,23 +13,26 @@ div.light{
     width: 20px;
     background-color: white;
     border-radius: 10px;
-    cursor: pointer;
     text-align: center;
 }
 
     div.light span{
         display: none;
     }
+    
+body.add-lights{
+    cursor: pointer;
+}
 
-body.add-lights div.light{
-    cursor: default;
+body.delete-lights div.light, body.change-colors div.light{
+    cursor: pointer;
 }
 
 body.move-lights div.light{
     cursor: move;
 }
 
-div#body.show-numbers div.light span{
+body.show-numbers div.light span{
     display: inline;
 }
 
@@ -43,7 +46,14 @@ div#body.show-numbers div.light span{
     visibility: hidden;
 }
 
-body.change-colors #slider{
+#play{
+    visibility: hidden;
+}
+
+body.change-colors #slider, body.change-colors #play{
     visibility: visible;
+}
+.ui-slider-handle{
+    cursor: pointer!important;
 }
     

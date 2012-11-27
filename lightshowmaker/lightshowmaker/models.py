@@ -1,4 +1,5 @@
 from django.db import models
+import json
 
 class Show(models.Model):
     name = models.CharField(max_length=30)
@@ -15,12 +16,12 @@ class Lightbulb(models.Model):
     x = models.FloatField()
     y = models.FloatField()
     
-    def rgb(self):
-        return self.colors.all()[0].rgb()
+    def color_data(self):
+        return json.dumps([{'red': color.red, 'green': color.green, 'blue': color.blue, 'color': color.rgb()} for color in self.colors.order_by('step')])
     
 class BulbColor(models.Model):
     lightbulb = models.ForeignKey('Lightbulb', related_name='colors')
-    frame = models.IntegerField()
+    step = models.IntegerField()
     red = models.IntegerField()
     green = models.IntegerField()
     blue = models.IntegerField()

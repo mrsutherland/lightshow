@@ -1,7 +1,75 @@
+function change(color){
+    var step = $('#slider').slider('value');
+    var colors = $(this).data('colors')[step]
+    colors.red = Math.round(color.toRgb().r / 17);
+    colors.green = Math.round(color.toRgb().g / 17);
+    colors.blue = Math.round(color.toRgb().b / 17);
+    colors.color = color.toRgbString();
+    $(this).css('background-color', color.toRgbString());
+}
+
+var spectrumData = {
+    showInput: true,
+    //showAlpha: true,
+    showPalette: true,
+    localStorageKey: 'lightshowmaker.colors',
+    clickoutFiresChange: true,
+    //showInitial: true,
+    preferredFormat: 'hex',
+    showButtons: false,
+    beforeShow: function(){
+        return $('body').hasClass('change-colors');
+    },
+    show: function(){
+        $(this).spectrum('set', $(this).css('background-color'));
+    },
+    move: function(color){
+        var red = Math.round(color.toRgb().r / 17)
+        var green = Math.round(color.toRgb().g / 17)
+        var blue =  Math.round(color.toRgb().b / 17)
+        $(this).spectrum('set', 'rgb(' + red * 17 + ',' + green * 17 + ',' + blue * 17 + ')');
+        change.apply(this, [color]);
+    },
+    change: change,
+}
+
+function play_step(){
+    var value = $('#slider').slider('option', 'value')
+    if (value == $('#slider').slider('option', 'steps') - 1) value = 0;
+    else value += 1;
+    $('#slider').slider('option', 'value', value);
+}
+
 $(function(){
     if ($('div#body').length) $('div#body').css('height', $(window).height() - $('div#body').position().top);
     
-    $('div#slider').slider();
+    var stepCount = $('div#body').data('stepCount');
+    $('div#slider').slider({
+        animate: 'fast',
+        min: 0,
+        max: stepCount - 1,
+        steps: stepCount,
+        change: function(event, ui){
+            for (var i=0; i<$('.light').length; i++){
+                var light = $($('.light')[i]);
+                light.css('background-color', light.data('colors')[ui.value].color);
+            };
+        }
+    });
+    
+    $('#play').on('click', function(e){
+        if ($(this).hasClass('playing')){
+            $(this).button('reset').removeClass('playing');
+            window.clearInterval($(this).data('intervalId'));
+        }
+        else {
+            $(this).button('playing').addClass('playing');
+            $(this).data('intervalId', window.setInterval(play_step, 500));
+        }
+    })
+    
+
+    $('.light').spectrum(spectrumData).off('click.spectrum')
 
     $(window).on('resize', function(){
         $('div#body').css('height', $(window).height() - $('div#body').position().top);
@@ -20,6 +88,30 @@ $(function(){
                 window.location=data.redirect;
             }
         });
+    });
+    
+    $('a#change-steps').on('click', function(e){
+        e.preventDefault();
+        var stepCount = window.prompt('New step count (extra steps will be deleted!):', $('#slider').slider('option', 'steps'));
+        if (stepCount == null) return;
+        stepCount = parseInt(stepCount);
+        $('#slider').slider('option', 'max', stepCount - 1);
+        $('#slider').slider('option', 'steps', stepCount);
+        
+        for (var i=0; i<$('.light').length; i++){
+            var light = $($('.light')[i]);
+            var colors = light.data('colors')
+            if (colors.length > stepCount) {
+                colors = colors.slice(stepCount)
+                if ($('#slider').slider('option', 'value') > stepCount - 1) $('#slider').slider('option', 'value', stepCount-1);
+            }
+            else if (colors.length < stepCount){
+                for (var j=0; j < stepCount - colors.length; j++){
+                    colors.push(colors.slice(-1)[0]);
+                }
+            }
+        }
+              
     });
     
     $('a#rename-show').on('click', function(e){
@@ -64,60 +156,42 @@ $(function(){
         e.preventDefault()
         if (!$('body').hasClass('add-lights')) return;
         var nextNumber = $('div#body').data('nextNumber');
-        $('div#body').data('nextNumber', nextNumber += 1);
+        $('div#body').data('nextNumber', nextNumber + 1);
+        
+        var colors = [];
+        for (var i=0; i<$('#slider').slider('option', 'steps'); i++) {
+            colors.push({'red': 15, 'green': 15, 'blue': 15, 'color': 'rgb(255,255,255)'});
+        }
+        
         $('div#body').append($('<div class="light"><span>' + nextNumber +'</span></div>')
                 .css({'top': e.pageY - $('div#body').position().top, 'left': e.pageX})
-                .data({'red': 15, 'green': 15, 'blue': 15}));
+                .data({'colors': colors})
+                .spectrum(spectrumData).off('click.spectrum'));
     })
     
     $('div#body').on('click', '.light', function(e){
         var $this = $(e.target).is('.light') ? $(e.target) : $(e.target).parents('.light');
         if ($('body').hasClass('delete-lights')){
+            e.preventDefault();
             $this.remove();
         }
-        
-        else if ($('body').hasClass('change-colors')) {
-            
-            function change(color){
-                $this.data('red', Math.round(color.toRgb().r / 17))
-                $this.data('green', Math.round(color.toRgb().g / 17))
-                $this.data('blue', Math.round(color.toRgb().b / 17))
-                $this.css('background-color', color.toRgbString());
-            }
-            
-            $this.spectrum({
-                color: $this.css('background-color'), 
-                showInput: true,
-                //showAlpha: true,
-                showPalette: true,
-                localStorageKey: 'lightshowmaker.colors',
-                clickoutFiresChange: true,
-                //showInitial: true,
-                preferredFormat: 'hex',
-                showButtons: false,
-                move: function(color){
-                    var red = Math.round(color.toRgb().r / 17)
-                    var green = Math.round(color.toRgb().g / 17)
-                    var blue =  Math.round(color.toRgb().b / 17)
-                    $this.spectrum('set', 'rgb(' + red * 17 + ',' + green * 17 + ',' + blue * 17 + ')');
-                    change(color);
-                },
-                change: change,
-            });
-        }
+        else if ($('body').hasClass('change-colors')){
+            $this.spectrum('toggle');
+            e.stopPropagation(); // I don't know why but this is absolutely reqd
+        }   
     })
     
     $('div#body').on('mousedown', '.light', function(down_event){
-        //down_event.preventDefault();
         if (!$('body').hasClass('move-lights')) return;
+        down_event.preventDefault();
         
         var light = $(down_event.target);
         $('div#body').on('mousemove.lightshowmaker.move-light', function(move_event){
-        //    move_event.preventDefault();
+            move_event.preventDefault();
             light.css({'top': move_event.pageY - $('div#body').position().top, 'left': move_event.pageX})
         })
         $('div#body').on('mouseup', function(up_event){
-        //    up_event.preventDefault();
+            up_event.preventDefault();
             $('div#body').off('mousemove.lightshowmaker.move-light')
         })
     });
@@ -129,14 +203,11 @@ $(function(){
         var lights = [];
         for (var i=0; i < $('.light').length; i++){
             var light = $($('.light')[i]);
-            console.log(light.data());
             lights.push({
                 'number': parseInt(light.text()),
                 'y': parseInt(light.css('top')),
                 'x': parseInt(light.css('left')),
-                'red': light.data('red'),
-                'green': light.data('green'),
-                'blue': light.data('blue')
+                'colors': light.data('colors'),
             });
         };
         

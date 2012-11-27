@@ -23,7 +23,8 @@ def index(request, show_id=None):
     if show_id:
         show = context['current_show'] = Show.objects.get(id=show_id)
         context['lights'] = Lightbulb.objects.filter(strand__show = show)
-        context['next_number'] = (context['lights'].aggregate(Max('number')).values()[0] or 0)
+        max = (context['lights'].aggregate(Max('number')).values()[0])
+        context['next_number'] = 0 if max is None else max+1
     return render(request, 'index.html', context)
 
 @csrf_exempt
@@ -62,9 +63,11 @@ def lights(request, show_id):
     lights = data['lights']
     
     Lightbulb.objects.filter(strand__show = show).all().delete()
+    BulbColor.objects.filter(lightbulb__strand__show = show).all().delete()
     for light in lights:        
-        bulb = Lightbulb.objects.create(strand=show.strands.all()[0], number = light['number'], x=light['x'], y=light['y'])
-        BulbColor.objects.create(lightbulb=bulb, red=light['red'], green=light['green'], blue=light['blue'], frame=1, brightness=255)
+        lightbulb = Lightbulb.objects.create(strand=show.strands.all()[0], number = light['number'], x=light['x'], y=light['y'])
+        for step, color in enumerate(light['colors']):
+            BulbColor.objects.create(lightbulb = lightbulb, step = step, red = color['red'], green=color['green'], blue=color['blue'], brightness=255)
     return HttpResponse()
 
 @csrf_exempt
