@@ -3,6 +3,7 @@
     <head>
         <meta charset="utf-8">
         <link href='{{STATIC_URL}}css/bootstrap.css' rel='stylesheet'>
+        <link href='{{STATIC_URL}}css/spectrum.css' rel='stylesheet'>
         <link href='{{STATIC_URL}}css/main.css' rel='stylesheet'>
     </head>
     
@@ -27,16 +28,31 @@
                             {% endfor %}
                         </ul>
                     </li>
-                    <li><button id='add-lights' type="button" class="btn btn-primary" data-toggle="button">Add Lights</button></li>
+                    <!--div class="btn-group" data-toggle="buttons-radio">
+                        <button type="button" class="btn">Add Lights</button>
+                        <button type="button" class="btn">Move Lights</button>
+                        <button type="button" class="btn">Change Colors</button>
+                    </div-->
+                    
+                    {% if current_show %}
+                        <li><button id='add-lights' type="button" class="btn btn-primary" data-toggle="button">Add Lights</button></li>
+                        <li><button id='show-numbers' type="button" class="btn" data-toggle="button">Show Numbers</button></li>
+                        <li><button id='save' type="button" class="btn btn-primary" data-loading-text='Saving...' autocomplete='off'>Save</button></li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
         
-        <div id='body'>
-        </div>
+        {% if current_show %}
+            <div id='body' data-next-number='0' data-show-id='{{current_show.id}}'>
+            </div>
+        {% else %}
+            Select a show!
+        {% endif %}
         
         <script src='{{STATIC_URL}}js/jquery-1.8.3.js'></script>
         <script src='{{STATIC_URL}}js/bootstrap.js'></script>
+        <script src='{{STATIC_URL}}js/spectrum.js'></script>
         <script src='{{STATIC_URL}}js/main.js'></script>
     </body>
 </html>

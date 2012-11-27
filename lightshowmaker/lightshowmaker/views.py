@@ -1,8 +1,8 @@
 from django.core.urlresolvers import reverse
 from django.http import HttpResponseNotAllowed, HttpResponse
-from django.shortcuts import render, redirect
+from django.shortcuts import render, get_object_or_404
 from django.views.decorators.csrf import csrf_exempt
-from lightshowmaker.models import Show
+from lightshowmaker.models import Show, Lightbulb, Strand, BulbColor
 import json
 import struct
 import time
@@ -25,23 +25,46 @@ def index(request, show_id=None):
 def show(request, show_id=None):
     if request.method == 'POST':
         if show_id:
-            show = Show.objects.get(id=show_id)
+            show = get_object_or_404(Show, id=show_id)
             show.name = request.POST['name']
             show.save()
         else:
             show = Show.objects.create(name=request.POST['name'])
+            strand = Strand.objects.create(show=show, name='Main', eui64='')
     
         return {'redirect': reverse('show', args=(show.id,))}
     
     return index(request, show_id)
 
-@csrf_except
+@csrf_exempt
+@return_json
+def lights(request, show_id):
+    if request.method != 'POST':
+        return HttpResponseNotAllowed(['POST'])
+    
+    show = get_object_or_404(Show, id=show_id)
+    
+    data = json.loads(request.POST['data'])
+    lights = data['lights']
+    
+    Lightbulb.objects.filter(strand__show = show).all().delete()
+    for light in lights:
+        color = light['color'].lstrip('#')
+        assert len(color) == 6
+        red = int(color[0], 16)
+        green = int(color[2], 16)
+        blue = int(color[4], 16)
+        
+        bulb = Lightbulb.objects.create(strand=show.strands[0], number = light['number'], x=light['x'], y=light['y'])
+        color = BulbColor.objects.create(lightbulb=bulb, red=red, green=green, blue=blue, frame=1, brightness=511)
+
+@csrf_exempt
 def real_time(request, show_id):
     import zigbee
     import socket
     if request.method == 'POST':
         sock = socket.socket(socket.AF_XBEE, socket.SOCK_DGRAM, socket.XBS_PROT_TRANSPORT)
-        show = Show.objects.get(id=show_id)
+        show = get_object_or_404(Show, id=show_id)
         for strand in show.strands:
             leds = []
             for lightbulb in strand.lightbulbs.order('number'):
@@ -56,5 +79,6 @@ def real_time(request, show_id):
                 sock.sendto(led, ('[00:13:A2:00:40:5E:0F:39]!'.lower(), 0x15, 0x1ed5, 0x11ed))
                 time.sleep(0.01)
         sock.close()
-            
-    
+
+    else:
+        return HttpResponseNotAllowed(['POST'])
