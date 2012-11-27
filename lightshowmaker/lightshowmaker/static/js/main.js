@@ -4,8 +4,8 @@ function change(color){
     colors.red = Math.round(color.toRgb().r / 17);
     colors.green = Math.round(color.toRgb().g / 17);
     colors.blue = Math.round(color.toRgb().b / 17);
-    colors.color = color.toRgbString();
-    $(this).css('background-color', color.toRgbString());
+    colors.color = 'rgb(' + colors.red * 17 + ',' + colors.green * 17 + ',' + colors.blue * 17 + ')';
+    $(this).css('background-color', colors.color);
 }
 
 var spectrumData = {
@@ -21,7 +21,7 @@ var spectrumData = {
         return $('body').hasClass('change-colors');
     },
     show: function(){
-        $(this).spectrum('set', $(this).css('background-color'));
+        $(this).spectrum('set', $(this).data('colors')[$('#slider').slider('option', 'value')].color);
     },
     move: function(color){
         var red = Math.round(color.toRgb().r / 17)
