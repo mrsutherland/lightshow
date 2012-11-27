@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <xbeeType>XBee ZB (S2B)</xbeeType>
+  <component name="system0">
+    <id>system</id>
+    <settings>
+      <setting name="System clock">
+        <id>clock</id>
+        <value>48 MHz</value>
+      </setting>
+      <setting name="Bus clock divider">
+        <id>clock_divider</id>
+        <value>2</value>
+      </setting>
+      <setting name="Enable Watchdog">
+        <id>enable_watchdog</id>
+        <value>False</value>
+      </setting>
+      <setting name="Watchdog timeout">
+        <id>watchdog_timeout</id>
+        <value>Long</value>
+      </setting>
+    </settings>
+    <pin_distribution>
+    </pin_distribution>
+  </component>
+  <component name="special0">
+    <id>special_pins</id>
+    <settings>
+      <setting name="Association LED Pin">
+        <id>association_pin</id>
+        <value>Enabled</value>
+      </setting>
+      <setting name="Sleep Request Pin">
+        <id>sleep_request_pin</id>
+        <value>Disabled</value>
+      </setting>
+      <setting name="Commissioning Pin">
+        <id>commissioning_pin</id>
+        <value>Enabled</value>
+      </setting>
+      <setting name="Reset Pin">
+        <id>reset_pin</id>
+        <value>Enabled</value>
+      </setting>
+      <setting name="BDM Pin">
+        <id>bdm_pin</id>
+        <value>Disabled</value>
+      </setting>
+      <setting name="RSSI PWM Pin">
+        <id>rssi_pwm_pin</id>
+        <value>Disabled</value>
+      </setting>
+    </settings>
+    <pin_distribution>
+      <pin_config name="On Sleep Pin">
+        <selected_pin>13</selected_pin>
+        <is_dynamic>false</is_dynamic>
+      </pin_config>
+      <pin_config name="Association Pin">
+        <selected_pin>15</selected_pin>
+        <is_dynamic>false</is_dynamic>
+      </pin_config>
+      <pin_config name="Commissioning Pin">
+        <selected_pin>20</selected_pin>
+        <is_dynamic>false</is_dynamic>
+      </pin_config>
+      <pin_config name="Reset Pin">
+        <selected_pin>5</selected_pin>
+        <is_dynamic>false</is_dynamic>
+      </pin_config>
+    </pin_distribution>
+  </component>
+  <component name="rtc0">
+    <id>rtc</id>
+    <settings>
+      <setting name="Enable periodic tasks">
+        <id>enable_periodic_tasks</id>
+        <value>False</value>
+      </setting>
+      <setting name="Task period">
+        <id>task_period</id>
+        <value>125</value>
+      </setting>
+      <setting name="Real task period">
+        <id>real_task_period</id>
+        <value>500 ms</value>
+      </setting>
+      <setting name="Enable Calendar">
+        <id>enable_calendar</id>
+        <value>False</value>
+      </setting>
+      <setting name="Enable Alarm">
+        <id>enable_alarm</id>
+        <value>False</value>
+      </setting>
+    </settings>
+    <pin_distribution>
+    </pin_distribution>
+  </component>
+  <component name="spi0">
+    <id>spi</id>
+    <settings>
+      <setting name="Bit shifting">
+        <id>bit_shifting</id>
+        <value>MSB</value>
+      </setting>
+      <setting name="Slave Select">
+        <id>slave_select</id>
+        <value>False</value>
+      </setting>
+      <setting name="Clock polarity bit">
+        <id>clock polarity</id>
+        <value>0</value>
+      </setting>
+      <setting name="Clock phase bit">
+        <id>clock_phase</id>
+        <value>0</value>
+      </setting>
+      <setting name="Operation Mode">
+        <id>logic</id>
+        <value>Master</value>
+      </setting>
+      <setting name="Pre-scaler">
+        <id>pre_scaler</id>
+        <value>1</value>
+      </setting>
+      <setting name="Baud-rate divider">
+        <id>baudrate_divider</id>
+        <value>2</value>
+      </setting>
+    </settings>
+    <pin_distribution>
+      <pin_config name="MISO Pin">
+        <selected_pin>4</selected_pin>
+        <is_dynamic>false</is_dynamic>
+      </pin_config>
+      <pin_config name="MOSI Pin">
+        <selected_pin>11</selected_pin>
+        <is_dynamic>false</is_dynamic>
+      </pin_config>
+      <pin_config name="SPSCK Pin">
+        <selected_pin>18</selected_pin>
+        <is_dynamic>false</is_dynamic>
+      </pin_config>
+    </pin_distribution>
+  </component>
+  <component name="zigbee0">
+    <id>zigbee</id>
+    <settings>
+      <setting name="XBee Frame handlers">
+        <id>zigbee_frame_handlers</id>
+        <settings>
+          <setting name="Remote AT command processing">
+            <id>remote_at</id>
+            <value>Disabled</value>
+          </setting>
+          <setting name="Modem status processing">
+            <id>modem_status</id>
+            <value>Disabled</value>
+          </setting>
+          <setting name="Process transmit status">
+            <id>transmit_status</id>
+            <value>Disabled</value>
+          </setting>
+          <setting name="Node Table support">
+            <id>node_table_support</id>
+            <value>Disabled</value>
+          </setting>
+          <setting name="Process incoming frames">
+            <id>packet_reception_ao</id>
+            <value>None</value>
+          </setting>
+        </settings>
+      </setting>
+    </settings>
+    <pin_distribution>
+    </pin_distribution>
+  </component>
+</configuration>
