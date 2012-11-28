@@ -76,20 +76,25 @@ def real_time(request, show_id):
     import socket
     if request.method == 'POST':
         sock = socket.socket(socket.AF_XBEE, socket.SOCK_DGRAM, socket.XBS_PROT_TRANSPORT)
-        sock.bind(('', 0x15, 0, 0))
-        show = get_object_or_404(Show, id=show_id)
-        for strand in show.strands.all():
-            leds = []
-            for lightbulb in strand.lightbulbs.order_by('number'):
-                color = lightbulb.colors.all()[0]
-                # color order - blue, green, red, extra data
-                extra = 0
-                leds.append(struct.pack('<BBBB', lightbulb.number, 
-                                        color.brightness & 0xFF, 
-                                        ((color.blue & 0xF) << 4) + (color.green & 0xF), 
-                                        ((color.red & 0xF) << 4) + (extra & 0xF)))
-            sock.sendto(''.join(leds), ('[00:13:A2:00:40:5E:0F:39]!'.lower(), 0x15, 0x1ed5, 0x11ed))
-        sock.close()
+        try:
+            sock.bind(('', 0x15, 0, 0))
+            show = get_object_or_404(Show, id=show_id)
+            for strand in show.strands.all():
+                for step in xrange(strand.lightbulbs.all()[0].colors.count()):
+                    leds = []
+                    for lightbulb in strand.lightbulbs.order_by('number'):
+                        color = lightbulb.colors.order_by('step')[step]
+                        # color order - blue, green, red, extra data
+                        extra = 0
+                        leds.append(struct.pack('<BBBB', lightbulb.number, 
+                                                color.brightness & 0xFF, 
+                                                ((color.blue & 0xF) << 4) + (color.green & 0xF), 
+                                                ((color.red & 0xF) << 4) + (extra & 0xF)))
+                    for i in xrange(0, len(leds), 20):
+                        sock.sendto(''.join(leds[i:i+20]), ('[00:13:A2:00:40:5E:0F:39]!'.lower(), 0x15, 0x1ed5, 0x11ed))
+                        time.sleep(0.1)
+        finally:
+            sock.close()
         return HttpResponse()
 
     else:
