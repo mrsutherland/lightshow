@@ -225,7 +225,7 @@ $(function(){
     $('#save').on('click', save);
     
     $('#real-time').on('click', function(e){
-        save(e, function(e){
+        //save(e, function(e){
            var $this = $(this).button('loading');
            $.ajax({
                url: '/show/' + $('div#body').data('showId') + '/real_time/',
@@ -234,6 +234,6 @@ $(function(){
                    $this.button('reset');
                }
            })
-       });
+       //});
     });
 });
