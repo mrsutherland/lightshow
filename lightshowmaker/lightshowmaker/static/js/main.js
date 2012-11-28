@@ -107,7 +107,7 @@ $(function(){
             }
             else if (colors.length < stepCount){
                 for (var j=0; j < stepCount - colors.length; j++){
-                    colors.push(colors.slice(-1)[0]);
+                    colors.push(colors.slice(-1)[0].slice());
                 }
             }
         }
