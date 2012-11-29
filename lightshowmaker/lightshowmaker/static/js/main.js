@@ -7,6 +7,18 @@ function change(color){
     colors.alpha = Math.round(color.toRgb().a * 255);
     colors.color = 'rgba(' + colors.red * 17 + ',' + colors.green * 17 + ',' + colors.blue * 17 + ',' + colors.alpha / 255.0 + ')';
     $(this).css('background-color', colors.color);
+    
+    if $('#live').hasClass('active'){
+        $('#live').button('loading');
+        $.ajax({
+            url: '/show/' + $('div#body').data('showId') + '/real_time/',
+            type: 'POST',
+            data: {'data': JSON.stringify({'steps': 1, 'lights': [{'number': $(this).data('number'), 'colors': [colors]}]})},
+            success: function(data, status, xhr){
+                $('#live').button('reset');
+            }
+        })   
+    };
 }
 
 var spectrumData = {
@@ -52,9 +64,24 @@ $(function(){
         max: stepCount - 1,
         steps: stepCount,
         change: function(event, ui){
+            var lights = [];
+            
             for (var i=0; i<$('.light').length; i++){
                 var light = $($('.light')[i]);
                 light.css('background-color', light.data('colors')[ui.value].color);
+                lights.append({'colors': [light.data('colors')[ui.value]], 'number': light.data('number')});
+            };
+            
+            if $('#live').hasClass('active'){
+                $('#live').button('loading');
+                $.ajax({
+                    url: '/show/' + $('div#body').data('showId') + '/real_time/',
+                    type: 'POST',
+                    data: {'data': JSON.stringify({'steps': 1, 'lights': lights})},
+                    success: function(data, status, xhr){
+                        $('#live').button('reset');
+                    }
+                })   
             };
         }
     });
@@ -234,7 +261,7 @@ $(function(){
         });
     });
     
-    $('#real-time').on('click', function(e){
+    $('#make-it-spin').on('click', function(e){
        var $this = $(this).button('loading');
        e.preventDefault()
        $.ajax({
