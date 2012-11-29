@@ -37,7 +37,6 @@
                     </li>
                     
                     {% if current_show %}
-
                         <li class='btn-group' data-toggle='buttons-radio'>
                             <button id='add-lights' type='button' class='btn'>Add</button>
                             <button id='move-lights' type='button' class='btn'>Move</button>
@@ -55,10 +54,10 @@
         </div>
         
         {% if current_show %}
-            <div id='body' data-next-number='{{next_number}}' data-show-id='{{current_show.id}}' data-step-count='{{lights.0.colors.count|default:4}}'>
+            <div id='body' data-show-id='{{current_show.id}}' data-step-count='{{current_show.steps}}'>
                 {% for light in lights %}
-                    <div class='light' data-colors='{{light.color_data}}'
-                         style='top: {{light.y}}px; left: {{light.x}}px; background-color: {{light.colors.all.0.rgb}}'><span>{{light.number}}</span></div>
+                    <div class='light' data-colors='{{light.color_data}}' data-number='{{light.number}}'
+                         style='top: {{light.y}}px; left: {{light.x}}px; background-color: {{light.colors.all.0.rgba}}'><span>{{light.number}}</span></div>
                 {% endfor %}
             </div>
         {% else %}

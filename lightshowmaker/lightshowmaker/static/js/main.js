@@ -4,13 +4,14 @@ function change(color){
     colors.red = Math.round(color.toRgb().r / 17);
     colors.green = Math.round(color.toRgb().g / 17);
     colors.blue = Math.round(color.toRgb().b / 17);
-    colors.color = 'rgb(' + colors.red * 17 + ',' + colors.green * 17 + ',' + colors.blue * 17 + ')';
+    colors.alpha = Math.round(color.toRgb().a * 255);
+    colors.color = 'rgba(' + colors.red * 17 + ',' + colors.green * 17 + ',' + colors.blue * 17 + ',' + colors.alpha / 255.0 + ')';
     $(this).css('background-color', colors.color);
 }
 
 var spectrumData = {
     showInput: true,
-    //showAlpha: true,
+    showAlpha: true,
     showPalette: true,
     localStorageKey: 'lightshowmaker.colors',
     clickoutFiresChange: true,
@@ -27,7 +28,8 @@ var spectrumData = {
         var red = Math.round(color.toRgb().r / 17)
         var green = Math.round(color.toRgb().g / 17)
         var blue =  Math.round(color.toRgb().b / 17)
-        $(this).spectrum('set', 'rgb(' + red * 17 + ',' + green * 17 + ',' + blue * 17 + ')');
+        var alpha = Math.round(color.toRgb().a * 255);
+        $(this).spectrum('set', 'rgba(' + red * 17 + ',' + green * 17 + ',' + blue * 17 + ',' + alpha  / 255.0 + ')');
         change.apply(this, [color]);
     },
     change: change,
@@ -102,8 +104,9 @@ $(function(){
             var light = $($('.light')[i]);
             var colors = light.data('colors')
             if (colors.length > stepCount) {
-                colors = colors.slice(stepCount)
-                if ($('#slider').slider('option', 'value') > stepCount - 1) $('#slider').slider('option', 'value', stepCount-1);
+                light.data('colors', colors.slice(stepCount))
+                if ($('#slider').slider('option', 'value') > stepCount - 1)
+                    $('#slider').slider('option', 'value', stepCount-1); // Move slider to new end
             }
             else if (colors.length < stepCount){
                 for (var j=0; j < stepCount - colors.length; j++){
@@ -152,23 +155,27 @@ $(function(){
         else $('body').addClass('show-numbers');
     })
     
+    // Add lights
     $('div#body').on('click', function(e){
         e.preventDefault()
         if (!$('body').hasClass('add-lights')) return;
-        var nextNumber = $('div#body').data('nextNumber');
-        $('div#body').data('nextNumber', nextNumber + 1);
         
+        for (var nextNumber = 0; nextNumber<10000; nextNumber++){ // There will never be more than 60something lights
+            if ($('.light[data-number="' + nextNumber + '"]').length == 0) break; //TODO: STRAND: this will need some extra logic
+        }
+                
         var colors = [];
         for (var i=0; i<$('#slider').slider('option', 'steps'); i++) {
             colors.push({'red': 15, 'green': 15, 'blue': 15, 'color': 'rgb(255,255,255)'});
         }
         
-        $('div#body').append($('<div class="light"><span>' + nextNumber +'</span></div>')
+        $('div#body').append($('<div class="light" data-number="' + nextNumber + '"><span>' + nextNumber +'</span></div>')
                 .css({'top': e.pageY - $('div#body').position().top, 'left': e.pageX})
-                .data({'colors': colors})
+                .data({'colors': colors, 'number': nextNumber})
                 .spectrum(spectrumData).off('click.spectrum'));
     })
     
+    // Delete lights / Change colors
     $('div#body').on('click', '.light', function(e){
         var $this = $(e.target).is('.light') ? $(e.target) : $(e.target).parents('.light');
         if ($('body').hasClass('delete-lights')){
@@ -177,15 +184,17 @@ $(function(){
         }
         else if ($('body').hasClass('change-colors')){
             $this.spectrum('toggle');
-            e.stopPropagation(); // I don't know why but this is absolutely reqd
+            e.stopPropagation(); // I don't know why but this is absolutely needed
         }   
     })
     
+    // Move Lights
     $('div#body').on('mousedown', '.light', function(down_event){
         if (!$('body').hasClass('move-lights')) return;
         down_event.preventDefault();
         
-        var light = $(down_event.target);
+        var light = $(down_event.target).is('.light') ? $(down_event.target) : $(down_event.target).parents('.light');
+        
         $('div#body').on('mousemove.lightshowmaker.move-light', function(move_event){
             move_event.preventDefault();
             light.css({'top': move_event.pageY - $('div#body').position().top, 'left': move_event.pageX})
@@ -204,7 +213,7 @@ $(function(){
         for (var i=0; i < $('.light').length; i++){
             var light = $($('.light')[i]);
             lights.push({
-                'number': parseInt(light.text()),
+                'number': light.data('number'),
                 'y': parseInt(light.css('top')),
                 'x': parseInt(light.css('left')),
                 'colors': light.data('colors'),
@@ -214,7 +223,7 @@ $(function(){
         $.ajax({
             url: '/show/' + $('div#body').data('showId') + '/lights/',
             type: 'POST',
-            data: {'data': JSON.stringify({'lights': lights})},
+            data: {'data': JSON.stringify({'lights': lights, 'steps': $('#slider').slider('option', 'steps')})},
             success: function(data, status, xhr){
                 $this.button('reset');
                 if (success) success(e)

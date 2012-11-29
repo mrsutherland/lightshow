@@ -38,8 +38,8 @@ WSGI_APPLICATION = 'lightshowmaker.wsgi.application'
 # To ignore transactions locally, override these values in the local settings.
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3', # 'django.db.backends.' plus 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
-        'NAME': os.path.join(DJANGO_ROOT, 'lightshowmaker.db'),          # Or path to database file if using sqlite3.
+        'ENGINE': 'django.db.backends.postgresql_psycopg2', # 'django.db.backends.' plus 'postgresql_psycopg2', 'mysql', 'sqlite3' or 'oracle'.
+        'NAME': 'lightshowmaker',          # Or path to database file if using sqlite3.
         'USER': '',                      # Not used with sqlite3.
         'PASSWORD': '',                  # Not used with sqlite3.
         'HOST': '',                      # Set to empty string for localhost. Not used with sqlite3.
@@ -118,11 +118,11 @@ LOGGING = {
 ROOT_URLCONF = 'lightshowmaker.urls'
 
 INSTALLED_APPS = (
-    'django.contrib.auth',
+#    'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',
-    'django.contrib.sites',
-    'django.contrib.messages',
+#    'django.contrib.sites',
+#    'django.contrib.messages',
     'django.contrib.staticfiles',
     # Uncomment the next line to enable the admin:
     # 'django.contrib.admin',
@@ -130,7 +130,7 @@ INSTALLED_APPS = (
     # 'django.contrib.admindocs',
     
     'django_extensions',
-    'south',
+#    'south',
     
     'lightshowmaker'
 )
@@ -145,13 +145,13 @@ TEMPLATE_LOADERS = (
 )
 
 TEMPLATE_CONTEXT_PROCESSORS = (
-    'django.contrib.auth.context_processors.auth',
+#    'django.contrib.auth.context_processors.auth',
     'django.core.context_processors.debug',
-    'django.core.context_processors.i18n',
+#    'django.core.context_processors.i18n',
     'django.core.context_processors.media',
     'django.core.context_processors.static',
-    'django.core.context_processors.tz',
-    'django.contrib.messages.context_processors.messages'
+#    'django.core.context_processors.tz',
+#    'django.contrib.messages.context_processors.messages'
 )
 
 
@@ -161,9 +161,9 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
-   # 'django.middleware.transaction.TransactionMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
+    'django.middleware.transaction.TransactionMiddleware',
+#    'django.contrib.auth.middleware.AuthenticationMiddleware',
+#    'django.contrib.messages.middleware.MessageMiddleware',
 )
 
 # List of classes that know how to find static files
