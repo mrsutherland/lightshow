@@ -1,4 +1,4 @@
-function change(color){
+function change(color, mute){
     var step = $('#slider').slider('value');
     var colors = $(this).data('colors')[step]
     colors.red = Math.round(color.toRgb().r / 17);
@@ -8,7 +8,7 @@ function change(color){
     colors.color = 'rgba(' + colors.red * 17 + ',' + colors.green * 17 + ',' + colors.blue * 17 + ',' + colors.alpha / 255.0 + ')';
     $(this).css('background-color', colors.color);
     
-    if $('#live').hasClass('active'){
+    if ($('#live').hasClass('active') && !mute){
         $('#live').button('loading');
         $.ajax({
             url: '/show/' + $('div#body').data('showId') + '/real_time/',
@@ -42,7 +42,7 @@ var spectrumData = {
         var blue =  Math.round(color.toRgb().b / 17)
         var alpha = Math.round(color.toRgb().a * 255);
         $(this).spectrum('set', 'rgba(' + red * 17 + ',' + green * 17 + ',' + blue * 17 + ',' + alpha  / 255.0 + ')');
-        change.apply(this, [color]);
+        change.apply(this, [color, true]);
     },
     change: change,
 }
@@ -69,10 +69,10 @@ $(function(){
             for (var i=0; i<$('.light').length; i++){
                 var light = $($('.light')[i]);
                 light.css('background-color', light.data('colors')[ui.value].color);
-                lights.append({'colors': [light.data('colors')[ui.value]], 'number': light.data('number')});
+                lights.push({'colors': [light.data('colors')[ui.value]], 'number': light.data('number')});
             };
             
-            if $('#live').hasClass('active'){
+            if ($('#live').hasClass('active')){
                 $('#live').button('loading');
                 $.ajax({
                     url: '/show/' + $('div#body').data('showId') + '/real_time/',
@@ -261,16 +261,22 @@ $(function(){
         });
     });
     
-    $('#make-it-spin').on('click', function(e){
-       var $this = $(this).button('loading');
-       e.preventDefault()
-       $.ajax({
-           url: '/show/' + $('div#body').data('showId') + '/real_time/',
-           type: 'POST',
-           data: assemble_data(),
-           success: function(data, status, xhr){
-               $this.button('reset');
-           }
-       })
+    function make_it_spin(e){
+        var $this = $(this).button('loading');
+        e.preventDefault()
+        $.ajax({
+            url: '/show/' + $('div#body').data('showId') + '/real_time/',
+            type: 'POST',
+            data: assemble_data(),
+            success: function(data, status, xhr){
+                $this.button('reset');
+            }
+        })
+     };
+
+    $('#make-it-spin').on('click', make_it_spin);
+    $('#live').on('click', function(e){
+        if (!$('#live').hasClass('active')) make_it_spin(e);
     });
+    
 });
