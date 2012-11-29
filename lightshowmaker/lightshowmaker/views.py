@@ -67,7 +67,7 @@ def lights(request, show_id):
     
     for light in data['lights']:        
         lightbulb = Lightbulb.objects.create(strand=show.strands.all()[0], number = light['number'], x=light['x'], y=light['y'])
-        assert show.steps == len(light['colors'])
+        assert show.steps == len(light['colors']), 'show.steps: %s, number of colors: %s' % (show.steps, len(light['colors']))
         for step, color in enumerate(light['colors']):
             BulbColor.objects.create(lightbulb = lightbulb, step = step, red = color['red'], green=color['green'], blue=color['blue'], brightness=color['alpha'])
             
@@ -87,7 +87,7 @@ def real_time(request, show_id):
     try:
         sock.bind(('', 0x15, 0, 0))
     
-        for step in data['steps']:
+        for step in xrange(data['steps']):
             leds = []
             for light in data['lights']:
                 color = light['colors'][step]
@@ -102,7 +102,7 @@ def real_time(request, show_id):
                 sock.sendto(''.join(leds[i:i+20]), ('[00:13:A2:00:40:5E:0F:39]!'.lower(), 0x15, 0x1ed5, 0x11ed))
                 time.sleep(0.1)
                 
-            if step != data['steps'][-1]:
+            if step < data['steps'] - 1:
                 time.sleep(1)
 
     finally:

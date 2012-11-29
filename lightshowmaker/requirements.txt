@@ -3,3 +3,4 @@ Django==1.4.2
 werkzeug
 django-extensions
 psycopg2
+pyserial

@@ -43,17 +43,14 @@ body.show-numbers div.light span{
 #slider{
     margin-top: 13px;
     width: 200px;
-    visibility: hidden;
 }
 
-#play{
-    visibility: hidden;
-}
-
-body.change-colors #slider, body.change-colors #play{
-    visibility: visible;
-}
-.ui-slider-handle{
+a.ui-slider-handle, a.ui-slider-handle:hover, a.ui-slider-handle:active{
     cursor: pointer!important;
+    text-align: center;
+    color: inherit!important;
+    font-size: inherit!important;
+    font-weight: lighter!important;
+    text-decoration: none!important;
 }
     

@@ -43,10 +43,12 @@
                             <button id='delete-lights' type='button' class='btn'>Delete</button>
                             <button id='change-colors' type='button' class='btn'>Colors</button>
                         </li>
-                        <li><div id='slider'></div></li>
+                        <li><div id='slider' data-previous-value='0'></div></li>
                         <li><button id='play' type='button' class='btn' data-playing-text='&lt;i class="icon-pause" &gt;&lt;/i&gt;'><i class='icon-play'></i></button></li>
+                        <li><button id='rewind' type='button' class='btn'><i class='icon-backward'></i></button></li>
+                        <li><button id='fast-forward' type='button' class='btn'><i class='icon-forward'></i></button></li>
                         <li><button id='show-numbers' type='button' class='btn' data-toggle='button'>Show Numbers</button></li>
-                        <li><button id='live' type='button' class='btn' data-toggle='button' data-loading-text='Sending...' autocomplete='off'>Live</button></li>
+                        <li><button id='live' type='button' class='btn' data-toggle='button' data-loading-text='.....' autocomplete='off'>Live</button></li>
                         <li><button id='save' type='button' class='btn btn-primary' data-loading-text='Saving...' autocomplete='off'>Save</button></li>
                         <li><button id='make-it-spin' type='button' class='btn btn-primary' data-loading-text='Making it spin...' autocomplete='off'>Make it Spin</button></li>
                     {% endif %}

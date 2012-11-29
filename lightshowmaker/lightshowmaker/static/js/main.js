@@ -16,7 +16,11 @@ function change(color, mute){
             data: {'data': JSON.stringify({'steps': 1, 'lights': [{'number': $(this).data('number'), 'colors': [colors]}]})},
             success: function(data, status, xhr){
                 $('#live').button('reset');
-            }
+            },
+            error: function(data, status, xhr){
+                window.alert('Error!');
+                $('#live').button('reset');
+            },
         })   
     };
 }
@@ -41,7 +45,7 @@ var spectrumData = {
         var blue =  Math.round(color.toRgb().b / 17)
         var alpha = Math.round(color.toRgb().a * 255);
         $(this).spectrum('set', 'rgba(' + red * 17 + ',' + green * 17 + ',' + blue * 17 + ',' + alpha  / 255.0 + ')');
-        change.apply(this, [color, true]);
+        change.apply(this, [color]);
     },
     change: change,
 }
@@ -62,16 +66,27 @@ $(function(){
         min: 0,
         max: stepCount - 1,
         steps: stepCount,
-        change: function(event, ui){
-            var lights = [];
+        create: function(event, ui){
+            $(this).find('a').html('0');
+        },
+        slide: function(event, ui){
+            $(this).find('a').html(ui.value);
+        },
+        change: function(event, ui){ // On slider change, either manual or by code
+            $(this).find('a').html(ui.value);
             
+            var lights = [];
             for (var i=0; i<$('.light').length; i++){
                 var light = $($('.light')[i]);
                 light.css('background-color', light.data('colors')[ui.value].color);
-                lights.push({'colors': [light.data('colors')[ui.value]], 'number': light.data('number')});
+                var current = light.data('colors')[ui.value];
+                var previous = light.data('colors')[$(this).data('previousValue')];
+                if ($('#live').hasClass('active') && (current.red != previous.red || current.green != previous.green || current.blue != previous.blue || current.brightness != previous.brightness)){ // only push changes
+                    lights.push({'colors': [light.data('colors')[ui.value]], 'number': light.data('number')});
+                }
             };
             
-            if ($('#live').hasClass('active')){
+            if ($('#live').hasClass('active') && lights.length > 0){
                 $('#live').button('loading');
                 $.ajax({
                     url: '/show/' + $('div#body').data('showId') + '/real_time/',
@@ -79,27 +94,21 @@ $(function(){
                     data: {'data': JSON.stringify({'steps': 1, 'lights': lights})},
                     success: function(data, status, xhr){
                         $('#live').button('reset');
-                    }
-                })   
+                    },
+                    error: function(data, status, xhr){
+                        window.alert('Error!');
+                        $('#live').button('reset');
+                    },
+
+                })
             };
+            $(this).data('previousValue', ui.value);
         }
     });
     
-    $('#play').on('click', function(e){
-        if ($(this).hasClass('playing')){
-            $(this).button('reset').removeClass('playing');
-            window.clearInterval($(this).data('intervalId'));
-        }
-        else {
-            $(this).button('playing').addClass('playing');
-            $(this).data('intervalId', window.setInterval(play_step, 500));
-        }
-    })
-    
-
-    $('.light').spectrum(spectrumData).off('click.spectrum')
-
-    $(window).on('resize', function(){
+    $('.light').spectrum(spectrumData).off('click.spectrum') // set up light chooser
+ 
+    $(window).on('resize', function(){ // set up window resizing
         $('div#body').css('height', $(window).height() - $('div#body').position().top);
     })
     
@@ -114,7 +123,10 @@ $(function(){
             dataType: 'json',
             success: function(data, status, xhr){
                 window.location=data.redirect;
-            }
+            },
+            error: function(data, status, xhr){
+                window.alert('Error!');
+            },
         });
     });
     
@@ -130,13 +142,15 @@ $(function(){
             var light = $($('.light')[i]);
             var colors = light.data('colors')
             if (colors.length > stepCount) {
-                light.data('colors', colors.slice(stepCount))
+                light.data('colors', colors.slice(0, stepCount))
                 if ($('#slider').slider('option', 'value') > stepCount - 1)
                     $('#slider').slider('option', 'value', stepCount-1); // Move slider to new end
             }
             else if (colors.length < stepCount){
-                for (var j=0; j < stepCount - colors.length; j++){
-                    colors.push(colors.slice(-1)[0].slice());
+                var lastColor = colors.slice(-1)[0];
+                var addLength = stepCount - colors.length;
+                for (var j=0; j < addLength; j++){
+                    colors.push($.extend({}, lastColor));
                 }
             }
         }
@@ -154,7 +168,11 @@ $(function(){
             dataType: 'json',
             success: function(data, status, xhr){
                 $('.current-show-name').html(showName);
-            }
+            },
+            error: function(data, status, xhr){
+                window.alert('Error!');
+            },
+
         });
     });
     
@@ -167,7 +185,11 @@ $(function(){
             type: 'POST',
             success: function(data, status, xhr){
                 window.location=data.redirect;
-            }
+            },
+            error: function(data, status, xhr){
+                window.alert('Error!');
+            },
+
         });
     });
     
@@ -192,13 +214,30 @@ $(function(){
                 
         var colors = [];
         for (var i=0; i<$('#slider').slider('option', 'steps'); i++) {
-            colors.push({'red': 15, 'green': 15, 'blue': 15, 'color': 'rgb(255,255,255)'});
+            colors.push({'red': 15, 'green': 15, 'blue': 15, 'alpha': 255, 'color': 'rgba(255,255,255,1.0)'});
         }
         
         $('div#body').append($('<div class="light" data-number="' + nextNumber + '"><span>' + nextNumber +'</span></div>')
                 .css({'top': e.pageY - $('div#body').position().top, 'left': e.pageX})
                 .data({'colors': colors, 'number': nextNumber})
                 .spectrum(spectrumData).off('click.spectrum'));
+        
+        if ($('#live').hasClass('active')){
+            $('#live').button('loading');
+            $.ajax({
+                url: '/show/' + $('div#body').data('showId') + '/real_time/',
+                type: 'POST',
+                data: {'data': JSON.stringify({'steps': 1, 'lights': [{'number': nextNumber, 'colors': [colors[0]]}]})},
+                success: function(data, status, xhr){
+                    $('#live').button('reset');
+                },
+                error: function(data, status, xhr){
+                    window.alert('Error!');
+                    $('#live').button('reset');
+                },
+
+            })   
+        };
     })
     
     // Delete lights / Change colors
@@ -231,11 +270,37 @@ $(function(){
         })
     });
     
+    // Rewind/FF
+    $('#rewind').on('click', function(e){
+        var current = $('#slider').slider('option', 'value');
+        if (current == 0) var next = $('#slider').slider('option', 'steps') - 1;
+        else var next = current - 1;
+        $('#slider').slider('option', 'value', next);
+    });
     
+    $('#fast-forward').on('click', function(e){
+        var current = $('#slider').slider('option', 'value');
+        if (current == $('#slider').slider('option', 'steps') - 1) var next = 0;
+        else var next = current + 1;
+        $('#slider').slider('option', 'value', next);
+    });
+    
+    // Play
+    $('#play').on('click', function(e){
+        if ($(this).hasClass('playing')){
+            $(this).button('reset').removeClass('playing');
+            window.clearInterval($(this).data('intervalId'));
+        }
+        else {
+            $(this).button('playing').addClass('playing');
+            $(this).data('intervalId', window.setInterval(play_step, 500));
+        }
+    });
+    
+
     function assemble_data(start, end){
         var lights = [];
         for (var i=0; i < $('.light').length; i++){
-            console.log(i);
             var light = $($('.light')[i]);
             lights.push({
                 'number': light.data('number'),
@@ -245,7 +310,7 @@ $(function(){
             });
         };
         
-        return {'data': JSON.stringify({'lights': lights, 'steps': $('#slider').slider('option', 'steps')})};
+        return {'data': JSON.stringify({'lights': lights, 'steps': end - start})};
     }
     
     $('#save').on('click', function(e){
@@ -257,7 +322,12 @@ $(function(){
             data: assemble_data(0, $('#slider').slider('option', 'steps')),
             success: function(data, status, xhr){
                 $this.button('reset');
-            }
+            },
+            error: function(data, status, xhr){
+                window.alert('Error!');
+                $this.button('reset');
+            },
+
         });
     });
     
@@ -270,7 +340,12 @@ $(function(){
             data: assemble_data(start, end),
             success: function(data, status, xhr){
                 $this.button('reset');
-            }
+            },
+            error: function(data, status, xhr){
+                window.alert('Error!');
+                $this.button('reset');
+            },
+
         })
      };
 
