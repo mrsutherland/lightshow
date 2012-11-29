@@ -27,7 +27,6 @@ var spectrumData = {
     showPalette: true,
     localStorageKey: 'lightshowmaker.colors',
     clickoutFiresChange: true,
-    //showInitial: true,
     preferredFormat: 'hex',
     showButtons: false,
     beforeShow: function(){
@@ -233,15 +232,16 @@ $(function(){
     });
     
     
-    function assemble_data(){
+    function assemble_data(start, end){
         var lights = [];
         for (var i=0; i < $('.light').length; i++){
+            console.log(i);
             var light = $($('.light')[i]);
             lights.push({
                 'number': light.data('number'),
                 'y': parseInt(light.css('top')),
                 'x': parseInt(light.css('left')),
-                'colors': light.data('colors'),
+                'colors': light.data('colors').slice(start, end),
             });
         };
         
@@ -254,29 +254,31 @@ $(function(){
         $.ajax({
             url: '/show/' + $('div#body').data('showId') + '/lights/',
             type: 'POST',
-            data: assemble_data(),
+            data: assemble_data(0, $('#slider').slider('option', 'steps')),
             success: function(data, status, xhr){
                 $this.button('reset');
             }
         });
     });
     
-    function make_it_spin(e){
+    function make_it_spin(e, start, end){
         var $this = $(this).button('loading');
         e.preventDefault()
         $.ajax({
             url: '/show/' + $('div#body').data('showId') + '/real_time/',
             type: 'POST',
-            data: assemble_data(),
+            data: assemble_data(start, end),
             success: function(data, status, xhr){
                 $this.button('reset');
             }
         })
      };
 
-    $('#make-it-spin').on('click', make_it_spin);
+    $('#make-it-spin').on('click', function(e){
+        make_it_spin(e, 0, $('#slider').slider('option', 'steps'));
+    });
     $('#live').on('click', function(e){
-        if (!$('#live').hasClass('active')) make_it_spin(e);
+        if (!$('#live').hasClass('active')) make_it_spin(e, $('#slider').slider('option', 'value'), $('#slider').slider('option', 'value') + 1); // deal with open end range
     });
     
 });
