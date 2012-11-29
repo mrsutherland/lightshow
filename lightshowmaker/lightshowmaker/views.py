@@ -77,25 +77,31 @@ def lights(request, show_id):
 def real_time(request, show_id):
     import zigbee
     import socket
-    if request.method == 'POST':
-        sock = socket.socket(socket.AF_XBEE, socket.SOCK_DGRAM, socket.XBS_PROT_TRANSPORT)
-        sock.bind(('', 0x15, 0, 0))
-        show = get_object_or_404(Show, id=show_id)
-        for strand in show.strands.all():
-            leds = []
-            for lightbulb in strand.lightbulbs.order_by('number'):
-                color = lightbulb.colors.all()[0]
-                # color order - blue, green, red, extra data
-                extra = 0
-                leds.append(struct.pack('<BBBB', lightbulb.number, 
-                                        color.brightness & 0xFF, 
-                                        ((color.blue & 0xF) << 4) + (color.green & 0xF), 
-                                        ((color.red & 0xF) << 4) + (extra & 0xF)))
-            for led in leds:
-                sock.sendto(led, ('[00:13:A2:00:40:5E:0F:39]!'.lower(), 0x15, 0x1ed5, 0x11ed))
-                time.sleep(0.25)
-        sock.close()
-        return HttpResponse()
-
-    else:
+    if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
+    show = get_object_or_404(Show, id=show_id)
+
+    sock = socket.socket(socket.AF_XBEE, socket.SOCK_DGRAM, socket.XBS_PROT_TRANSPORT)
+    sock.bind(('', 0x15, 0, 0))
+    
+    data = json.loads(request.POST['data'])
+    for step in data['steps']:
+        leds = []
+        for light in data['lights']:
+            color = light['colors'][step]
+            # color order - blue, green, red, extra data
+            extra = 0
+            leds.append(struct.pack('<BBBB', light['number'], 
+                                    color['alpha'] & 0xFF, 
+                                    ((color['blue'] & 0xF) << 4) + (color['green'] & 0xF), 
+                                    ((color['red'] & 0xF) << 4) + (extra & 0xF)))
+    
+        for led in leds:
+            sock.sendto(led, ('[00:13:A2:00:40:5E:0F:39]!'.lower(), 0x15, 0x1ed5, 0x11ed))
+            time.sleep(0.25)
+            
+        if step != data['steps'][-1]:
+            time.sleep(1)
+
+    sock.close()
+    return HttpResponse()

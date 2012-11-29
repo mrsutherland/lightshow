@@ -206,9 +206,7 @@ $(function(){
     });
     
     
-    function save(e, success){
-        var $this = $(this).button('loading');
-        e.preventDefault()
+    function assemble_data(){
         var lights = [];
         for (var i=0; i < $('.light').length; i++){
             var light = $($('.light')[i]);
@@ -220,29 +218,32 @@ $(function(){
             });
         };
         
+        return {'data': JSON.stringify({'lights': lights, 'steps': $('#slider').slider('option', 'steps')})};
+    }
+    
+    $('#save').on('click', function(e){
+        var $this = $(this).button('loading');
+        e.preventDefault()
         $.ajax({
             url: '/show/' + $('div#body').data('showId') + '/lights/',
             type: 'POST',
-            data: {'data': JSON.stringify({'lights': lights, 'steps': $('#slider').slider('option', 'steps')})},
+            data: assemble_data(),
             success: function(data, status, xhr){
                 $this.button('reset');
-                if (success) success(e)
             }
         });
-    }
-    
-    $('#save').on('click', save);
+    });
     
     $('#real-time').on('click', function(e){
-        save(e, function(e){
-           var $this = $(this).button('loading');
-           $.ajax({
-               url: '/show/' + $('div#body').data('showId') + '/real_time/',
-               type: 'POST',
-               success: function(data, status, xhr){
-                   $this.button('reset');
-               }
-           })
-       });
+       var $this = $(this).button('loading');
+       e.preventDefault()
+       $.ajax({
+           url: '/show/' + $('div#body').data('showId') + '/real_time/',
+           type: 'POST',
+           data: assemble_data(),
+           success: function(data, status, xhr){
+               $this.button('reset');
+           }
+       })
     });
 });
