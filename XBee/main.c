@@ -60,6 +60,7 @@
 // timer settings for different bits
 #define TIMER_0 240
 #define TIMER_1 480
+#define TIMER_START TIMER_1 // send the start bit for LED frame
 #define TIMER_END 720  // modulo number
 #define TIMER_OFF TIMER_END+1
 
@@ -83,9 +84,11 @@ struct LED {
 };
 
 // Variables for timer interrupt
-struct LED *cur_led;
-uint8_t led_cur_byte;
-uint8_t led_bit_mask;
+uint8_t led_buf[20*sizeof(struct LED)]; // Buffer for ZigBee interrupt, NOTE: this is 80 bytes!
+uint8_t *led_cur_byte; //where to start sending LEDs from
+uint8_t *led_end_byte; //pointer to stop sending at
+uint8_t led_byte_index=0; // used to figure out when to not send extra 4 bits
+uint8_t led_bit_mask = 0x20;  //skip first two bits of led number
 uint16_t led_next_bit = TIMER_OFF;
 
 //interrupt 9 void Vtpm2ch1_isr(void)
@@ -101,16 +104,15 @@ interrupt void Vtpm2ovf_isr(void)
 	// TIMER_END and TIMER_OFF are set so that the line is kept low the whole time.
 	// Because this is a very quick interrupt, I set the next bit at the beginning
 	// of the interrupt and then calculate what the next bit is going to be.
+	// When sending an LED frame there is also a start bit and the line has to be
+	// kept low between frames for a bit.
 	
-	// reset interrupt
-	TPM2SC_TOF = 0;
-
 	// set the next bit
 	TPM2C0V = led_next_bit;
 	
 	if (led_next_bit < TIMER_END) {
 		// calculate the next bit
-		if (((uint8_t*) cur_led)[led_cur_byte] & led_bit_mask) {
+		if (*led_cur_byte & led_bit_mask) {
 			// next bit is 1
 			led_next_bit = TIMER_1;
 		} else {
@@ -123,26 +125,43 @@ interrupt void Vtpm2ovf_isr(void)
 			// roll over to the next byte
 			led_bit_mask = 0x80;
 			++led_cur_byte;
-		} else if (led_bit_mask == 0x04 && led_cur_byte == 3) {
-			// this is the end of the led, switch to END mode
+			++led_byte_index;
+		} else if (led_bit_mask == 0x04 && led_byte_index == 3) {
+			// this is the end of the led frame, switch to END mode
+			// NOTE: Have to keep the line low between LEDs.
+			// NOTE: led_bit_mask == 0x04 because we already incremented  
+			// mask and send the next time through
 			led_next_bit = TIMER_END;
+			// reset bit mask and byte pointer for next led
+			led_bit_mask = 0x20; // skip first two bits of led number
+			++led_cur_byte;
+			led_byte_index = 0;
 		}
 	} else if (led_next_bit == TIMER_END) {
-		// Have to keep the line low between LEDs for a bit count.
-		led_next_bit = TIMER_OFF;
+		// move on to next byte, or switch to timer_off mode
+		if (led_cur_byte < led_end_byte) {
+			led_next_bit = TIMER_START; // start bit for LED frame
+		} else {
+			// no more data
+			led_next_bit = TIMER_OFF;
+		}
 	}
+
+	// reset interrupt
+	TPM2SC_TOF = 0;
 }
 
-void send_led(struct LED* next_led) 
-{
-	// Sets up interrupt to set 1 LED
-	// First wait until we are done sending current LED
-	// Then reset LED pointer, masks, and state.
+void send_leds(const uint8_t *first, uint8_t length) {
+	// copy buffer into led buffer, then kick off sending LEDs
+	
+	// first make sure we are done sending from buffer
 	while(led_next_bit != TIMER_OFF);
-	cur_led = next_led;
-	led_cur_byte = 0;
-	led_bit_mask = 0x20; // skip first two bits 
-	led_next_bit = TIMER_1;
+	// copy buffer
+	memcpy2(led_buf, first, length);
+	// set end byte and start sending
+	led_cur_byte = led_buf; //also done in interrupt
+	led_end_byte = led_buf + length; //just past end of buffer
+	led_next_bit = TIMER_START;
 }
 
 #if defined(ENABLE_XBEE_HANDLE_RX_EXPLICIT_FRAMES) || \
@@ -153,12 +172,8 @@ void send_led(struct LED* next_led)
 
 int led_handler(const wpan_envelope_t FAR *envelope, void FAR *context)
 {
-	// Accepts incoming LED data.
-	uint8_t i;
-	for (i = 0; i < envelope->length >> 2; i++) {
-		send_led((struct LED*)envelope->payload + i);
-	}
-	while(led_next_bit != TIMER_OFF); // wait for leds to finish being sent
+	// Accepts incoming LED data, puts it in buffer to be sent.
+	send_leds((uint8_t*)(envelope->payload), (uint8_t) envelope->length);
 	return 0;
 }
 
@@ -221,7 +236,7 @@ void main(void)
 	
 	// initialize LEDs
 	// NOTE: The LEDs need to be enumerated once they are powered on
-	// You don't have to number them 0-49, other numberings can make certain
+	// You don't have to number them 0-49, other enumerations can make certain
 	// patterns simpler.  You'd have to cut power to reset the numbering though.
 	for (index=0; index < 2; ++index) {
 		// start off by setting all of the LEDs to dim blue
@@ -237,11 +252,11 @@ void main(void)
 	for (led_num=0; led_num < 50; ++led_num){
 		// set the 50 LEDs to initial state
 		led[index].number = led_num;
-		send_led(&(led[index]));
-		index ^= 1;
+		send_leds((uint8_t*)(led+index), sizeof(struct LED));
+		index ^= 1; //switch between 0 and 1
 	}
 	
-	// run forever, processing incoming
+	// run forever, processing incoming ZigBee messages
 	for (;;) {
 		sys_watchdog_reset();
 		sys_xbee_tick();
