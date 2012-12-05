@@ -31,10 +31,6 @@
         <id>association_pin</id>
         <value>Enabled</value>
       </setting>
-      <setting name="Sleep Request Pin">
-        <id>sleep_request_pin</id>
-        <value>Disabled</value>
-      </setting>
       <setting name="Commissioning Pin">
         <id>commissioning_pin</id>
         <value>Enabled</value>
@@ -53,10 +49,6 @@
       </setting>
     </settings>
     <pin_distribution>
-      <pin_config name="On Sleep Pin">
-        <selected_pin>13</selected_pin>
-        <is_dynamic>false</is_dynamic>
-      </pin_config>
       <pin_config name="Association Pin">
         <selected_pin>15</selected_pin>
         <is_dynamic>false</is_dynamic>
@@ -105,10 +97,6 @@
         <id>bit_shifting</id>
         <value>MSB</value>
       </setting>
-      <setting name="Slave Select">
-        <id>slave_select</id>
-        <value>False</value>
-      </setting>
       <setting name="Clock polarity bit">
         <id>clock polarity</id>
         <value>0</value>
@@ -116,10 +104,6 @@
       <setting name="Clock phase bit">
         <id>clock_phase</id>
         <value>0</value>
-      </setting>
-      <setting name="Operation Mode">
-        <id>logic</id>
-        <value>Master</value>
       </setting>
       <setting name="Pre-scaler">
         <id>pre_scaler</id>
@@ -169,7 +153,7 @@
           </setting>
           <setting name="Process incoming frames">
             <id>packet_reception_ao</id>
-            <value>None</value>
+            <value>Explicit RX frames (AO=1)</value>
           </setting>
         </settings>
       </setting>

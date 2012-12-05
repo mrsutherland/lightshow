@@ -41,7 +41,7 @@
  *   XPIN10 = GND
  *   XPIN11 = spi0 [MOSI Pin]
  *   XPIN12 = <<UNUSED>>
- *   XPIN13 = special0 [On Sleep Pin]
+ *   XPIN13 = <<UNUSED>>
  *   XPIN14 = <<UNUSED>>
  *   XPIN15 = special0 [Association Pin]
  *   XPIN16 = <<UNUSED>>
@@ -134,6 +134,52 @@ void send_led(struct LED* next_led)
 	led_next_bit = TIMER_1;
 }
 
+#if defined(ENABLE_XBEE_HANDLE_RX_EXPLICIT_FRAMES) || \
+    defined(ENABLE_XBEE_HANDLE_RX_ZCL_FRAMES) || \
+    defined(ENABLE_XBEE_HANDLE_ND_RESPONSE_FRAMES)
+
+#include "zigbee/zdo.h"
+
+int led_handler(const wpan_envelope_t FAR *envelope, void FAR *context)
+{
+	uint8_t i;
+	for (i = 0; i < envelope->length >> 2; i++) {
+		send_led((struct LED*)envelope->payload + i);
+	}
+	while(led_next_bit != TIMER_OFF); // wait for leds to finish being sent
+	return 0;
+}
+
+const wpan_cluster_table_entry_t light_show_clusters[] = {
+	{0x11ed, led_handler, NULL,	WPAN_CLUST_FLAG_INPUT | WPAN_CLUST_FLAG_NOT_ZCL},
+    WPAN_CLUST_ENTRY_LIST_END
+};
+
+/* Used to track ZDO transactions in order to match responses to requests
+   (#ZDO_MATCH_DESC_RESP). */
+wpan_ep_state_t zdo_ep_state = { 0 };
+
+const wpan_endpoint_table_entry_t endpoints_table[] = {
+    /* Add your endpoints here */
+
+    ZDO_ENDPOINT(zdo_ep_state),
+
+    /* Digi endpoints */
+    {
+        0x15,  // endpoint
+        0x1ED5,        // profile ID
+        NULL,                     // endpoint handler
+        NULL,                     // ep_state
+        0x0000,                   // device ID
+        0x00,                     // version
+        light_show_clusters        // clusters
+    },
+
+    { WPAN_ENDPOINT_END_OF_LIST }
+};
+
+#endif
+
 void main(void)
 {
 	uint8_t led_num=0;
@@ -168,47 +214,26 @@ void main(void)
 	// transition point
 	TPM2C0V = TIMER_OFF;
 	
-	for (;;) {
-		if ((led_num == offset) || (led_num == (50-offset))) {
-			red = 0xF;
-		} else {
-			red = 0x0;
-		}
+	// initialize LEDs
+	red = 0x1;
+	green = 0x1;
+	blue = 0x1;
+	brightness = 0x10;
+	for (led_num=0; led_num < 50; ++led_num){
 		next_led = &(led[index]);
 		next_led->number = led_num;
 		next_led->brightness = brightness;
-		next_led->blue = 0x0;
-		next_led->green = 0;
+		next_led->blue = blue;
+		next_led->green = green;
 		next_led->red = red;
 		next_led->extra = 0x00;
 		send_led(next_led);
-
-		if (++led_num >= 50) {
-			led_num = 0;
-			if (++offset >= 50) {
-				offset = 0;
-			}
-			for(i=0; i<1000; ++i) {
-				_delay_10_us();
-			}
-
-//			if (++red > 0x0c) {
-//				red = 0;
-//				if (++blue > 0x0c) {
-//					blue = 0;
-//					if (++green > 0x0c) {
-//						green = 0;
-//					}
-//				}
-//			}
-//			for(i=0; i<10000; ++i) {
-//				_delay_10_us();
-//			}
-		}
-		
 		index ^= 1;
-		
-		//sys_watchdog_reset();
+	}
+	
+	for (;;) {
+		sys_watchdog_reset();
 		sys_xbee_tick();
 	}
+		
 }
