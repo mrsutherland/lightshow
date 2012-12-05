@@ -57,9 +57,6 @@
 
 #define DELAY_us 30
 
-//#define SET_HIGH (PTAD |= 0x08)
-//#define SET_LOW (PTAD &= ~0x08)
-
 // timer settings for different bits
 #define TIMER_0 240
 #define TIMER_1 480
@@ -71,6 +68,11 @@ void _delay_10_us(void) {
 	for(i=0; i<DELAY_us; ++i);
 }
 
+// struct mirrors the data being sent over the line to set an LED
+// number only uses last 6 bits - 0x3F is a special broadcast address
+// extra bits aren't being used right now.
+// NOTE: as far as I can tell, halving the brightness is the same as
+// halving all of the color values.  Think of the brightness as a scalar.
 struct LED {
 	uint8_t number;
 	uint8_t brightness;
@@ -80,11 +82,7 @@ struct LED {
 	uint8_t red:4;
 };
 
-#define BLUE 0
-#define GREEN 1
-#define RED 2
-
-// Buffer for interrupt
+// Variables for timer interrupt
 struct LED *cur_led;
 uint8_t led_cur_byte;
 uint8_t led_bit_mask;
@@ -94,8 +92,17 @@ uint16_t led_next_bit = TIMER_OFF;
 #pragma TRAP_PROC
 interrupt void Vtpm2ovf_isr(void)
 {
+	// Interrupt to send data to LEDs
+	// I'm using a PWM to send individual bits.
+	// The PWM period is fixed, I modify the duty cycle for each bit.
+	//                              _                       __
+	// A "1" is sent as (001) or __|  and "0" is (011) or _|
+	// TIMER_0 and TIMER_1 are set to send a "0" or "1" bit.
+	// TIMER_END and TIMER_OFF are set so that the line is kept low the whole time.
+	// Because this is a very quick interrupt, I set the next bit at the beginning
+	// of the interrupt and then calculate what the next bit is going to be.
+	
 	// reset interrupt
-	//TPM2C1SC_CH1F=0; // Read flag, then write a 0 to the bit.
 	TPM2SC_TOF = 0;
 
 	// set the next bit
@@ -121,12 +128,16 @@ interrupt void Vtpm2ovf_isr(void)
 			led_next_bit = TIMER_END;
 		}
 	} else if (led_next_bit == TIMER_END) {
+		// Have to keep the line low between LEDs for a bit count.
 		led_next_bit = TIMER_OFF;
 	}
 }
 
 void send_led(struct LED* next_led) 
 {
+	// Sets up interrupt to set 1 LED
+	// First wait until we are done sending current LED
+	// Then reset LED pointer, masks, and state.
 	while(led_next_bit != TIMER_OFF);
 	cur_led = next_led;
 	led_cur_byte = 0;
@@ -142,6 +153,7 @@ void send_led(struct LED* next_led)
 
 int led_handler(const wpan_envelope_t FAR *envelope, void FAR *context)
 {
+	// Accepts incoming LED data.
 	uint8_t i;
 	for (i = 0; i < envelope->length >> 2; i++) {
 		send_led((struct LED*)envelope->payload + i);
@@ -184,14 +196,7 @@ void main(void)
 {
 	uint8_t led_num=0;
 	struct LED led[2];
-	struct LED *next_led;
 	uint8_t index = 0;
-	uint8_t red = 0;
-	uint8_t blue = 0;
-	uint8_t green = 0;
-	uint8_t brightness = 0xFF;
-	uint16_t i;
-	uint8_t offset = 0;
 	
 	sys_hw_init();
 	sys_xbee_init();
@@ -206,31 +211,37 @@ void main(void)
 	// enable timer clock
 	SCGC1_TPM2 = 1;
 	// enable interrupt, bus clock, pre-scalar == 1
-	TPM2SC = 0x48;//0x08; //0x48;
+	TPM2SC = 0x48;
 	// length of Timer
 	TPM2MOD = TIMER_END;
 	// set channel 1 as PWM
-	TPM2C0SC = 0x24;//0x64; // enable interrupt, PWM low->high
+	TPM2C0SC = 0x24; // enable interrupt, PWM low->high
 	// transition point
 	TPM2C0V = TIMER_OFF;
 	
 	// initialize LEDs
-	red = 0x1;
-	green = 0x1;
-	blue = 0x1;
-	brightness = 0x10;
+	// NOTE: The LEDs need to be enumerated once they are powered on
+	// You don't have to number them 0-49, other numberings can make certain
+	// patterns simpler.  You'd have to cut power to reset the numbering though.
+	for (index=0; index < 2; ++index) {
+		// start off by setting all of the LEDs to dim blue
+		// NOTE: picked a random color to make sure things were working
+		// could easily default to LEDs off using brightness=0
+		led[index].brightness = 0x10;
+		led[index].red = 0;
+		led[index].green = 0;
+		led[index].blue = 1;
+		led[index].extra = 0;
+	}
+	index = 0; // need to reset after for loop
 	for (led_num=0; led_num < 50; ++led_num){
-		next_led = &(led[index]);
-		next_led->number = led_num;
-		next_led->brightness = brightness;
-		next_led->blue = blue;
-		next_led->green = green;
-		next_led->red = red;
-		next_led->extra = 0x00;
-		send_led(next_led);
+		// set the 50 LEDs to initial state
+		led[index].number = led_num;
+		send_led(&(led[index]));
 		index ^= 1;
 	}
 	
+	// run forever, processing incoming
 	for (;;) {
 		sys_watchdog_reset();
 		sys_xbee_tick();
