@@ -154,14 +154,16 @@ interrupt void Vtpm2ovf_isr(void)
 void send_leds(const uint8_t *first, uint8_t length) {
 	// copy buffer into led buffer, then kick off sending LEDs
 	
-	// first make sure we are done sending from buffer
-	while(led_next_bit != TIMER_OFF);
-	// copy buffer
-	memcpy2(led_buf, first, length);
-	// set end byte and start sending
-	led_cur_byte = led_buf; //also done in interrupt
-	led_end_byte = led_buf + length; //just past end of buffer
-	led_next_bit = TIMER_START;
+	if (length) { // memcpy has no range checks
+		// first make sure we are done sending from buffer
+		while(led_next_bit != TIMER_OFF);
+		// copy buffer
+		memcpy2(led_buf, first, length);
+		// set end byte and start sending
+		led_cur_byte = led_buf; //also done in interrupt
+		led_end_byte = led_buf + length; //just past end of buffer
+		led_next_bit = TIMER_START;
+	}
 }
 
 #if defined(ENABLE_XBEE_HANDLE_RX_EXPLICIT_FRAMES) || \
