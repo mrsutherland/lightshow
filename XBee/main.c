@@ -84,7 +84,7 @@ struct LED {
 };
 
 // Variables for timer interrupt
-uint8_t led_buf[20*sizeof(struct LED)]; // Buffer for ZigBee interrupt, NOTE: this is 80 bytes!
+uint8_t led_buf[50*sizeof(struct LED)]; // Buffer for ZigBee interrupt, NOTE: this is 200 bytes!
 uint8_t *led_cur_byte; //where to start sending LEDs from
 uint8_t *led_end_byte; //pointer to stop sending at
 uint8_t led_byte_index=0; // used to figure out when to not send extra 4 bits
@@ -179,8 +179,49 @@ int led_handler(const wpan_envelope_t FAR *envelope, void FAR *context)
 	return 0;
 }
 
+int led_compressed_handler(const wpan_envelope_t FAR *envelope, void FAR *context)
+{
+	// Accepts compressed incoming LED data, uncompresses and puts it in buffer to be sent.
+	// LEDs are stored in 12 bit segments - blue, green, red
+	// Extract LEDs two at a time and insert into buffer to be copied to LED buffer later.  
+	uint8_t i;
+	uint8_t buffer[50*sizeof(struct LED)]; //NOTE: 200 bytes
+	struct LED *temp_led = (struct LED*) buffer;
+	uint8_t *payload_byte = envelope->payload;
+	
+	if (envelope->length != 75) {
+		// message should contain 50 leds in compressed format.
+		return 0;
+	}
+	
+	for (i=0; i<25; ++i) {
+		// first led
+		temp_led->number = i<<1;
+		temp_led->brightness = 0xFF;
+		temp_led->blue = (*payload_byte & 0xF0) >> 4;
+		temp_led->green = *payload_byte & 0x0F;
+		payload_byte += 1;
+		temp_led->red = (*payload_byte & 0xF0) >> 4;
+		temp_led->extra = 0;
+		// second led
+		temp_led += 1;
+		temp_led->number = (i<<1) + 1;
+		temp_led->brightness = 0xFF;
+		temp_led->blue = *payload_byte & 0x0F;
+		payload_byte += 1;
+		temp_led->green = (*payload_byte & 0xF0) >> 4;
+		temp_led->red = *payload_byte & 0x0F;
+		temp_led->extra = 0;
+		payload_byte += 1;		
+		temp_led += 1;
+	}
+	send_leds(buffer, sizeof(buffer));
+	return 0;
+}
+
 const wpan_cluster_table_entry_t light_show_clusters[] = {
 	{0x11ed, led_handler, NULL,	WPAN_CLUST_FLAG_INPUT | WPAN_CLUST_FLAG_NOT_ZCL},
+	{0xC1ed, led_compressed_handler, NULL,	WPAN_CLUST_FLAG_INPUT | WPAN_CLUST_FLAG_NOT_ZCL},
     WPAN_CLUST_ENTRY_LIST_END
 };
 
@@ -193,7 +234,7 @@ const wpan_endpoint_table_entry_t endpoints_table[] = {
 
     ZDO_ENDPOINT(zdo_ep_state),
 
-    /* Digi endpoints */
+    /* LED endpoints */
     {
         0x15,  // endpoint
         0x1ED5,        // profile ID
