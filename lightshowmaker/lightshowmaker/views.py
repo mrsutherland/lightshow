@@ -75,36 +75,30 @@ def lights(request, show_id):
 
 @csrf_exempt
 def real_time(request, show_id):
-    import zigbee
-    import socket
     if request.method != 'POST':
         return HttpResponseNotAllowed(['POST'])
     show = get_object_or_404(Show, id=show_id)
     data = json.loads(request.POST['data'])
-
-    sock = socket.socket(socket.AF_XBEE, socket.SOCK_DGRAM, socket.XBS_PROT_TRANSPORT)
     
-    try:
-        sock.bind(('', 0x15, 0, 0))
-    
-        for step in xrange(data['steps']):
-            leds = []
-            for light in data['lights']:
-                color = light['colors'][step]
-                # color order - blue, green, red, extra data
-                extra = 0
-                leds.append(struct.pack('<BBBB', light['number'], 
-                                        color['alpha'] & 0xFF, 
-                                        ((color['blue'] & 0xF) << 4) + (color['green'] & 0xF), 
-                                        ((color['red'] & 0xF) << 4) + (extra & 0xF)))
-        
-            for i in xrange(0, len(leds), 20):
-                sock.sendto(''.join(leds[i:i+20]), ('[00:13:A2:00:40:5E:0F:39]!'.lower(), 0x15, 0x1ed5, 0x11ed))
-                time.sleep(0.1)
-                
-            if step < data['steps'] - 1:
-                time.sleep(1)
+    #initialize ZigBee side
+    import zigbee_leds
+    zigbee_leds.initialize()
 
-    finally:
-        sock.close()
+    for step in xrange(data['steps']):
+        leds = []
+        for light in data['lights']:
+            color = light['colors'][step]
+            # color order - blue, green, red, extra data
+            extra = 0
+            leds.append(struct.pack('<BBBB', light['number'], 
+                                    color['alpha'] & 0xFF, 
+                                    ((color['blue'] & 0xF) << 4) + (color['green'] & 0xF), 
+                                    ((color['red'] & 0xF) << 4) + (extra & 0xF)))
+    
+        for i in xrange(0, len(leds), 20):
+            zigbee_leds.send_leds(''.join(leds[i:i+20]), '[00:13:A2:00:40:5E:0F:39]!'.lower())
+            
+        if step < data['steps'] - 1:
+            time.sleep(1)
+
     return HttpResponse()
