@@ -8,13 +8,17 @@ from threading import Thread, RLock
 
 class ZigBee_LED(Thread):
     SIMULTANEOUS_MSGS = 3
+    ENDPOINT_ID = 0xE8
+    PROFILE_ID = 0xC105
+    LED_CLUSTER = 0x0011
+    LED_CLUSTER_COMPACT = 0xC1ED
     #NOTE: this class relies on the socket to always give back a tx_status for a send.
     
     def __init__(self):
         Thread.__init__(self)
         # create ZigBee socket
         self.sock = socket.socket(socket.AF_XBEE, socket.SOCK_DGRAM, socket.XBS_PROT_TRANSPORT) #@UndefinedVariable
-        self.sock.bind(('', 0x15, 0, 0))
+        self.sock.bind(('', self.ENDPOINT_ID, 0, 0))
         self.sock.setblocking(0) # set nonblocking
         self.sock.setsockopt(socket.XBS_SOL_EP, socket.XBS_SO_EP_TX_STATUS, 1) # enable transmission status messages @UndefinedVariable
         # socketpair for interrupting selects
@@ -61,10 +65,10 @@ class ZigBee_LED(Thread):
             return self.tx_id
     
     def send_leds(self, payload, eui):
-        self.add_to_queue(payload, eui, 0x11ed)
+        self.add_to_queue(payload, eui, self.LED_CLUSTER)
     
     def send_compressed_leds(self, payload, eui):
-        self.add_to_queue(payload, eui, 0xc1ed)
+        self.add_to_queue(payload, eui, self.LED_CLUSTER_COMPACT)
             
     def add_to_queue(self, payload, eui, cluster):
         with self.lock:
@@ -73,7 +77,7 @@ class ZigBee_LED(Thread):
             if eui not in self.outgoing:
                 self.outgoing[eui] = []
                 self.in_the_air[eui] = 0
-            addr = (eui, 0x15, 0x1ed5, cluster)
+            addr = (eui, self.ENDPOINT_ID, self.PROFILE_ID, cluster)
             self.outgoing[eui].append((payload, addr))
             # wake up send thread
             self.wake_sock_send.send(chr(42))
