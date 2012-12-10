@@ -1,0 +1,107 @@
+import zigbee #@UnusedImport - needed to modify socket on PC to support XBee sockets
+import socket
+import struct
+import select
+from threading import Thread, RLock
+
+def get_xbee_list(refresh=False):
+    #return list of discovered EUIs on the network (skip first node which is self)
+    return [node.addr_extended.lower() for node in zigbee.get_node_list(refresh)][1:]
+
+class XBee_LED(Thread):
+    SIMULTANEOUS_MSGS = 3
+    ENDPOINT_ID = 0xE8
+    PROFILE_ID = 0xC105
+    LED_CLUSTER = 0x0011
+    LED_CLUSTER_COMPACT = 0xC1ED
+    #NOTE: this class relies on the socket to always give back a tx_status for a send.
+    
+    def __init__(self):
+        Thread.__init__(self)
+        # create ZigBee socket
+        self.sock = socket.socket(socket.AF_XBEE, socket.SOCK_DGRAM, socket.XBS_PROT_TRANSPORT) #@UndefinedVariable
+        self.sock.bind(('', self.ENDPOINT_ID, 0, 0))
+        self.sock.setblocking(0) # set nonblocking
+        self.sock.setsockopt(socket.XBS_SOL_EP, socket.XBS_SO_EP_TX_STATUS, 1) # enable transmission status messages @UndefinedVariable
+        # socketpair for interrupting selects
+        self.wake_sock_send, self.wake_sock_recv = socket.socketpair() #@UndefinedVariable
+        # internal vars
+        self.outgoing = {} # messages waiting to send {eui: (data, addr)}
+        self.in_the_air = {} # how messages in the air right now {eui: count}
+        self.active_ids = {} # active tx_ids mapping back to euis {tx_id: eui}
+        self.tx_id = 0
+        self.lock = RLock()
+    
+    def run(self):
+        while True:
+            # send messages
+            with self.lock:
+                for eui, message_tuples in self.outgoing.iteritems():
+                    while len(message_tuples) and self.in_the_air[eui] < self.SIMULTANEOUS_MSGS:
+                        # can send another message
+                        payload, addr = message_tuples.pop(0)
+                        tx_id = self.next_tx_id()
+                        addr += (0, tx_id) #add options and tx_id fields
+                        self.active_ids[tx_id] = eui
+                        self.in_the_air[eui] += 1
+                        self.sock.sendto(payload, addr)
+            # recv messages
+            rlist = select.select([self.sock, self.wake_sock_recv], [], [])[0]
+            if self.wake_sock_recv in rlist:
+                self.wake_sock_recv.recvfrom(255) #clear socket
+            if self.sock in rlist:
+                data, addr = self.sock.recvfrom(255) #@UnusedVariable
+                #only expecting tx status messages
+                if len(addr) < 6:
+                    continue
+                tx_id = addr[5]
+                with self.lock:
+                    eui = self.active_ids.pop(tx_id)
+                    self.in_the_air[eui] -= 1
+        
+    def next_tx_id(self):
+        with self.lock:
+            self.tx_id += 1
+            if self.tx_id > 0xFF:
+                self.tx_id = 1
+            return self.tx_id
+    
+    def send_leds(self, payload, eui):
+        self.add_to_queue(payload, eui, self.LED_CLUSTER)
+    
+    def send_compact_leds(self, payload, eui):
+        self.add_to_queue(payload, eui, self.LED_CLUSTER_COMPACT)
+            
+    def add_to_queue(self, payload, eui, cluster):
+        with self.lock:
+            # add message to outgoing queue
+            eui = eui.lower()
+            if eui not in self.outgoing:
+                self.outgoing[eui] = []
+                self.in_the_air[eui] = 0
+            addr = (eui, self.ENDPOINT_ID, self.PROFILE_ID, cluster)
+            self.outgoing[eui].append((payload, addr))
+            # wake up send thread
+            self.wake_sock_send.send(chr(42))
+    
+    def queue_size(self, eui):
+        return len(self.outgoing.get(eui, []))
+
+# Create XBee object and register functions
+xbee_led = None
+send_leds = None
+send_compact_leds = None
+queue_size = None
+
+def initialize():
+    global xbee_led
+    global send_leds
+    global send_compact_leds
+    global queue_size    
+    if not xbee_led:
+        xbee_led = XBee_LED()
+        xbee_led.start()
+        
+        send_leds = xbee_led.send_leds
+        send_compact_leds = xbee_led.send_compact_leds
+        queue_size = xbee_led.queue_size
