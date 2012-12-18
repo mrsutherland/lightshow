@@ -254,6 +254,7 @@ void main(void)
 	uint8_t led_num=0;
 	struct LED led[2];
 	uint8_t index = 0;
+	uint16_t i;
 	
 	sys_hw_init();
 	sys_xbee_init();
@@ -275,6 +276,9 @@ void main(void)
 	TPM2C0SC = 0x24; // enable interrupt, PWM low->high
 	// transition point
 	TPM2C0V = TIMER_OFF;
+	
+	// delay to let the LED strand initialize
+	for(i=0; i < 0xFFFF; ++i);
 	
 	// initialize LEDs
 	// NOTE: The LEDs need to be enumerated once they are powered on
