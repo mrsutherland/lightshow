@@ -28,9 +28,9 @@ class Color:
         self.brightness = brightness
 
 class LED:
-    def __init__(self, number, color):
+    def __init__(self, number, color=None):
         self.number = number
-        self.color = color
+        self.color = color or Color()
         
     def export(self):
         return struct.pack('<BBBB', self.number, 
@@ -39,10 +39,10 @@ class LED:
                             ((self.color.red & 0xF) << 4))
 
 class CompactLEDs(list):
-    def __init__(self):
+    def __init__(self, color=None):
         list.__init__(self)
         for _ in xrange(50):
-            self.append(Color())
+            self.append(color or Color())
 
     def export(self):
         out_str = ''
