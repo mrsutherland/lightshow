@@ -18,9 +18,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE 
 # SOFTWARE.
 
-import zigbee #@UnusedImport - needed to modify socket on PC to support XBee sockets
+from cp4pc import zigbee #@UnusedImport - needed to modify socket on PC to support XBee sockets
 import socket
-import struct
 import select
 from threading import Thread, RLock
 
