@@ -1,6 +1,0 @@
-Django==1.4.2
-#South==0.7.6
-werkzeug
-django-extensions
-psycopg2
-pyserial
