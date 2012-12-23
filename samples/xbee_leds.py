@@ -21,7 +21,10 @@
 from cp4pc import zigbee #@UnusedImport - needed to modify socket on PC to support XBee sockets
 import socket
 import select
+import time
 from threading import Thread, RLock
+
+TIMEOUT=5 #5 second message timeout
 
 def get_xbee_list(refresh=False):
     #return list of discovered EUIs on the network (skip first node which is self)
@@ -47,12 +50,21 @@ class XBee_LED(Thread):
         # internal vars
         self.outgoing = {} # messages waiting to send {eui: (data, addr)}
         self.in_the_air = {} # how messages in the air right now {eui: count}
-        self.active_ids = {} # active tx_ids mapping back to euis {tx_id: eui}
+        self.active_ids = {} # active tx_ids mapping back to euis {tx_id: (eui, timestamp)}
         self.tx_id = 0
         self.lock = RLock()
     
     def run(self):
         while True:
+            #check for message timeouts
+            with self.lock:
+                for tx_id, (eui, timestamp) in self.active_ids.items():
+                    if time.time() > timestamp + TIMEOUT:
+                        # message timed out, remove from queue and keep sending
+                        print "ERROR: timeout eui=%s, tx_id=%d, time=%s" % (eui, tx_id, time.ctime())
+                        del self.active_ids[tx_id]
+                        self.in_the_air[eui] -= 1
+            
             # send messages
             with self.lock:
                 for eui, message_tuples in self.outgoing.iteritems():
@@ -61,11 +73,11 @@ class XBee_LED(Thread):
                         payload, addr = message_tuples.pop(0)
                         tx_id = self.next_tx_id()
                         addr += (0, tx_id) #add options and tx_id fields
-                        self.active_ids[tx_id] = eui
+                        self.active_ids[tx_id] = (eui, time.time())
                         self.in_the_air[eui] += 1
                         self.sock.sendto(payload, addr)
             # recv messages
-            rlist = select.select([self.sock, self.wake_sock_recv], [], [])[0]
+            rlist = select.select([self.sock, self.wake_sock_recv], [], [], 0.1)[0]
             if self.wake_sock_recv in rlist:
                 self.wake_sock_recv.recvfrom(255) #clear socket
             if self.sock in rlist:
@@ -73,10 +85,12 @@ class XBee_LED(Thread):
                 #only expecting tx status messages
                 if len(addr) < 6:
                     continue
+                #extract tx_id and make room for another message to send
                 tx_id = addr[5]
                 with self.lock:
-                    eui = self.active_ids.pop(tx_id)
-                    self.in_the_air[eui] -= 1
+                    if tx_id in self.active_ids:
+                        eui = self.active_ids.pop(tx_id)[0]
+                        self.in_the_air[eui] -= 1
         
     def next_tx_id(self):
         with self.lock:
