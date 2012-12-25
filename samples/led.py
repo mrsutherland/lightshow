@@ -27,6 +27,28 @@ class Color:
         self.blue = blue
         self.brightness = brightness
 
+    def __mul__(self, b):
+        return Color(self.red*b, self.green*b, self.blue*b, self.brightness)
+    __rmul__ = __mul__
+    
+    def __div__(self, b):
+        return self.__mul__(1.0/b)
+    
+    def __add__(self, b):
+        #do not add brightness
+        return Color(self.red+b.red, self.green+b.green, self.blue+b.blue, self.brightness)
+    
+    def __sub__(self, b):
+        #do not subtract brightness...
+        return Color(self.red-b.red, self.green-b.green, self.blue-b.blue, self.brightness)
+    
+    def scale(self, scalar):
+        #scale the color, this is useful for gradients and fading
+        self.red *= scalar
+        self.green *= scalar
+        self.blue *= scalar
+
+
 class LED:
     def __init__(self, number, color=None):
         self.number = number
@@ -34,9 +56,9 @@ class LED:
         
     def export(self):
         return struct.pack('<BBBB', self.number, 
-                            self.color.brightness, 
-                            ((self.color.blue & 0xF) << 4) + (self.color.green & 0xF), 
-                            ((self.color.red & 0xF) << 4))
+                            int(self.color.brightness), 
+                            ((int(self.color.blue) & 0xF) << 4) + (int(self.color.green) & 0xF), 
+                            ((int(self.color.red) & 0xF) << 4))
 
 class CompactLEDs(list):
     def __init__(self, color=None):
@@ -48,7 +70,22 @@ class CompactLEDs(list):
         out_str = ''
         for i in xrange(0, 50, 2):
             out_str += struct.pack('<BBB',
-                                   ((self[i].blue & 0xF) << 4) + (self[i].green & 0xF),
-                                   ((self[i].red & 0xF) << 4) + (self[i+1].blue & 0xF),
-                                   ((self[i+1].green & 0xF) << 4) + (self[i+1].red & 0xF))
+                                   ((int(self[i].blue) & 0xF) << 4) + (int(self[i].green) & 0xF),
+                                   ((int(self[i].red) & 0xF) << 4) + (int(self[i+1].blue) & 0xF),
+                                   ((int(self[i+1].green) & 0xF) << 4) + (int(self[i+1].red) & 0xF))
         return out_str
+
+    def gradient(self, start_led, start_color, end_led, end_color):
+        if end_led < start_led:
+            #roll around array
+            end_led += len(self)
+        num_leds = end_led - start_led
+        for led_num in xrange(num_leds):
+            self[(start_led+led_num)%len(self)] = (start_color * (num_leds-led_num) + end_color * (led_num)) / num_leds
+        
+    def gradients(self, points): #points is a list of tuple(led_num, color)
+        prev_num, prev_color = points[0]
+        for led_num, color in points[1:]:
+            self.gradient(prev_num, prev_color, led_num, color)
+            prev_num = led_num
+            prev_color = color
