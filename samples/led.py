@@ -48,6 +48,10 @@ class Color:
         self.green *= scalar
         self.blue *= scalar
 
+    def __inv__(self):
+        #invert the colors
+        return Color(0xf-self.red ,0xf-self.blue, 0xf-self.green)
+    __invert__ = __inv__
 
 class LED:
     def __init__(self, number, color=None):
