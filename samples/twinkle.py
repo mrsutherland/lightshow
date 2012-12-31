@@ -40,10 +40,8 @@ class Twinkle:
             self.offset = 1
     
     def calc_color(self):
-        scalar = self.step / self.STEPS
-        return led.Color(red = int(self.target_color.red * scalar),
-                         green = int(self.target_color.green * scalar),
-                         blue = int(self.target_color.blue * scalar))
+        scalar = float(self.step) / self.STEPS
+        return self.target_color * scalar
     
     def tick(self):
         response = ''
