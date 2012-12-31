@@ -21,7 +21,11 @@
 import time
 from led import Color, CompactLEDs
 import xbee_leds
-import mp3play
+try:
+    import mp3play
+except:
+    pass #play show without music...
+import os
 
 DATA_FILE = r'Dance of the Sugar Plum Fairy - Sheet1.csv'
 MUSIC_FILE = r'dance of the sugar plum fairy.mp3' # http://www.thelogoedcd.com/section_pics/dotspf.mp3
@@ -108,13 +112,19 @@ eui = xbees[0]
 
 xbee_leds.initialize()
 
-clip = mp3play.load(MUSIC_FILE)
-clip.play()
+if mp3play and os.path.exists(MUSIC_FILE):
+    clip = mp3play.load(MUSIC_FILE)
+    clip.play()
 start_time = time.time()
 for start, stop, scale, thrum, bell, warble in times:
+    #prepare LED values
+    set_leds(strand, scale, thrum, bell, warble)
+    #wait until time to send
     while time.time() < start_time + start:
         time.sleep(.001)
-    set_leds(strand, scale, thrum, bell, warble)
+    #send LED values
     xbee_leds.send_compact_leds(strand.export(), eui)
 xbee_leds.send_compact_leds(CompactLEDs().export(), eui) #turn off lights at end.
-clip.stop()
+if clip:
+    clip.stop()
+xbee_leds.close()
