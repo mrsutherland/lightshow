@@ -53,9 +53,10 @@ class XBee_LED(Thread):
         self.active_ids = {} # active tx_ids mapping back to euis {tx_id: (eui, timestamp)}
         self.tx_id = 0
         self.lock = RLock()
+        self.quit = False
     
     def run(self):
-        while True:
+        while not self.quit:
             #check for message timeouts
             with self.lock:
                 for tx_id, (eui, timestamp) in self.active_ids.items():
@@ -120,6 +121,9 @@ class XBee_LED(Thread):
     def queue_size(self, eui):
         return len(self.outgoing.get(eui, []))
 
+    def close(self):
+        self.quit = True
+
 # Create XBee object and register functions
 xbee_led = None
 send_leds = None
@@ -138,3 +142,6 @@ def initialize():
         send_leds = xbee_led.send_leds
         send_compact_leds = xbee_led.send_compact_leds
         queue_size = xbee_led.queue_size
+
+def close():
+    xbee_led.close()
