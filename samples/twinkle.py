@@ -83,7 +83,7 @@ if __name__ == '__main__':
               led.Color(red=0x0E, green=0xE, blue=0xE) #white
               ]
     for color in colors:
-        for _ in xrange(5):
+        for _ in range(5):
             twinkles.append(Twinkle(color))
     while True:
         for twinkle in twinkles:
@@ -91,9 +91,9 @@ if __name__ == '__main__':
             if response:
                 leds.append(response)
         if leds:
-            for i in xrange(0, len(leds), 20):
+            for i in range(0, len(leds), 20):
                 # only send up to 20 leds at a time
-                xbee_leds.send_leds(''.join(leds[i:i+20]), eui.lower())
+                xbee_leds.send_leds(b''.join(leds[i:i+20]), eui.lower())
             leds = []
         # make sure we don't try to send too fast
         while xbee_leds.queue_size(eui) > 3:

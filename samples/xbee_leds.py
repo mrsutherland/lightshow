@@ -59,16 +59,16 @@ class XBee_LED(Thread):
         while not self.quit:
             #check for message timeouts
             with self.lock:
-                for tx_id, (eui, timestamp) in self.active_ids.items():
+                for tx_id, (eui, timestamp) in list(self.active_ids.items()):
                     if time.time() > timestamp + TIMEOUT:
                         # message timed out, remove from queue and keep sending
-                        print "ERROR: timeout eui=%s, tx_id=%d, time=%s" % (eui, tx_id, time.ctime())
+                        print("ERROR: timeout eui=%s, tx_id=%d, time=%s" % (eui, tx_id, time.ctime()))
                         del self.active_ids[tx_id]
                         self.in_the_air[eui] -= 1
             
             # send messages
             with self.lock:
-                for eui, message_tuples in self.outgoing.iteritems():
+                for eui, message_tuples in self.outgoing.items():
                     while len(message_tuples) and self.in_the_air[eui] < self.SIMULTANEOUS_MSGS:
                         # can send another message
                         payload, addr = message_tuples.pop(0)
@@ -116,7 +116,7 @@ class XBee_LED(Thread):
             addr = (eui, self.ENDPOINT_ID, self.PROFILE_ID, cluster)
             self.outgoing[eui].append((payload, addr))
             # wake up send thread
-            self.wake_sock_send.send(chr(42))
+            self.wake_sock_send.send(bytearray((42,)))
     
     def queue_size(self, eui):
         return len(self.outgoing.get(eui, []))

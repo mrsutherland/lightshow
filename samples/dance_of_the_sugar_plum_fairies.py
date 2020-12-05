@@ -33,10 +33,10 @@ MUSIC_FILE = r'dance of the sugar plum fairy.mp3' # http://www.thelogoedcd.com/s
 def set_leds(strand, scale, thrum, bell, warble):
     #thrum is bottom of tree
     if thrum == 1:
-        for i in xrange(16):
+        for i in range(16):
             strand[i] = Color(red=0xF)
     elif thrum == 2:
-        for i in xrange(16):
+        for i in range(16):
             strand[i] = Color(red=0xF, blue=0xF)
     if thrum:
         #scale colors
@@ -46,16 +46,16 @@ def set_leds(strand, scale, thrum, bell, warble):
             color.green = int(color.green * scale)
     #bell is top of tree
     if bell == 1:
-        for i in xrange(16, len(strand)):
+        for i in range(16, len(strand)):
             strand[i] = Color(green=0xF)
     elif bell == 2:
-        for i in xrange(16, len(strand)):
+        for i in range(16, len(strand)):
             strand[i] = Color(green=0xF, blue=0xF)
     elif bell == 3:
-        for i in xrange(16, len(strand)):
+        for i in range(16, len(strand)):
             strand[i] = Color(blue=0xF)
     elif bell == 4:
-        for i in xrange(16, len(strand)):
+        for i in range(16, len(strand)):
             strand[i] = Color(red=0xF, blue=0xF, green=0xF)
     if bell:
         #scale colors
@@ -65,16 +65,16 @@ def set_leds(strand, scale, thrum, bell, warble):
             color.green = int(color.green * scale)
     # warble is whole tree
     if warble == 1:
-        for i in xrange(len(strand)):
+        for i in range(len(strand)):
             strand[i] = Color(red=0xF)
     elif warble == 2:
-        for i in xrange(len(strand)):
+        for i in range(len(strand)):
             strand[i] = Color(red=0xF, blue=0xF)
     if warble == 3:
-        for i in xrange(len(strand)):
+        for i in range(len(strand)):
             strand[i] = Color(blue=0xF)
     elif warble == 4:
-        for i in xrange(len(strand)):
+        for i in range(len(strand)):
             strand[i] = Color(green=0xF)
     if warble:
         #scale colors
